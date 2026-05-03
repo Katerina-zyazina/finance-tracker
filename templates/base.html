@@ -4,19 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Finance Tracker{% endblock %}</title>
-    <!-- Bootstrap 5 CSS CDN -->
+    <!-- Подключаем Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Иконки Bootstrap -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <!-- Шрифт Google Fonts (по желанию) -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Roboto', sans-serif; }
+    </style>
 </head>
 <body class="bg-light">
 
-    <!-- Навигационная панель -->
+    <!-- Навигация -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="/">
-                <i class="bi bi-wallet2"></i> Finance Tracker
-            </a>
+            <a class="navbar-brand fw-bold" href="/">💰 Finance Tracker</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -24,30 +25,17 @@
                 <ul class="navbar-nav ms-auto">
                     {% if session.get('user_id') %}
                         <li class="nav-item">
-                            <span class="nav-link text-light">
-                                <i class="bi bi-person-circle"></i> {{ session.get('username', 'User') }}
-                            </span>
+                            <span class="nav-link text-white-50">Привет, {{ session.get('username') }}!</span>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('dashboard') }}">
-                                <i class="bi bi-speedometer2"></i> Дашборд
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('logout') }}">
-                                <i class="bi bi-box-arrow-right"></i> Выйти
-                            </a>
+                            <a class="nav-link text-white" href="{{ url_for('logout') }}">Выйти</a>
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('login') }}">
-                                <i class="bi bi-box-arrow-in-right"></i> Войти
-                            </a>
+                            <a class="nav-link text-white" href="{{ url_for('login') }}">Войти</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('register') }}">
-                                <i class="bi bi-person-plus"></i> Регистрация
-                            </a>
+                            <a class="nav-link btn btn-light text-primary ms-2 px-3" href="{{ url_for('register') }}">Регистрация</a>
                         </li>
                     {% endif %}
                 </ul>
@@ -55,14 +43,14 @@
         </div>
     </nav>
 
-    <!-- Блок для flash-сообщений -->
+    <!-- Всплывающие сообщения -->
     <div class="container mt-3">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ 'danger' if category == 'danger' else category }} alert-dismissible fade show" role="alert">
+                    <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
                         {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 {% endfor %}
             {% endif %}
@@ -74,14 +62,10 @@
         {% block content %}{% endblock %}
     </main>
 
-    <!-- Футер -->
-    <footer class="bg-white border-top mt-auto py-3">
-        <div class="container text-center text-muted">
-            <small>&copy; 2024 Finance Tracker. Учебный проект.</small>
-        </div>
-    </footer>
-
-    <!-- Bootstrap 5 JS CDN -->
+    <!-- Скрипты Bootstrap -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Chart.js (если нужен график) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </body>
 </html>
