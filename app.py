@@ -4,14 +4,15 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 import os
 
+# Создание приложения Flask
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'my-secret-key-for-practice'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-me')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///finance.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-# --- МОДЕЛИ ---
+# Модели базы данных
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
@@ -22,21 +23,21 @@ class Transaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     amount = db.Column(db.Float, nullable=False)
     category = db.Column(db.String(50), nullable=False)
-    type = db.Column(db.String(10), nullable=False) # income или expense
+    type = db.Column(db.String(10), nullable=False)
     date = db.Column(db.DateTime, default=db.func.current_timestamp())
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
-# --- ФУНКЦИИ ---
+# Декоратор проверки авторизации
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'user_id' not in session:
-            flash('Сначала войдите в систему.', 'warning')
+            flash('Пожалуйста, войдите в систему.', 'warning')
             return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated_function
 
-# --- МАРШРУТЫ ---
+# Маршруты
 @app.route('/')
 def home():
     return redirect(url_for('login'))
@@ -83,7 +84,6 @@ def logout():
 def dashboard():
     user_id = session['user_id']
 
-    # --- ЛОГИКА ДОБАВЛЕНИЯ (POST) ---
     if request.method == 'POST':
         try:
             amount = float(request.form.get('amount'))
@@ -95,13 +95,12 @@ def dashboard():
 
             new_trans = Transaction(amount=amount, category=category, type=trans_type, user_id=user_id)
             db.session.add(new_trans)
-            db.session.commit() # ВАЖНО: Сохраняем в базу!
+            db.session.commit()
             flash('Операция добавлена.', 'success')
         except Exception as e:
             flash('Ошибка: введите корректные данные.', 'danger')
         return redirect(url_for('dashboard'))
 
-    # --- ЛОГИКА ОТОБРАЖЕНИЯ (GET) ---
     transactions = Transaction.query.filter_by(user_id=user_id).order_by(Transaction.date.desc()).all()
     income = sum(t.amount for t in transactions if t.type == 'income')
     expense = sum(t.amount for t in transactions if t.type == 'expense')
@@ -123,6 +122,7 @@ def delete_transaction(id):
         flash('Запись удалена.', 'info')
     return redirect(url_for('dashboard'))
 
+# Запуск приложения
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
