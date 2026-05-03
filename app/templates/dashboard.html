@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Дашборд{% endblock %}
+
+{% block content %}
+<!-- КАРТОЧКИ СВОДКИ -->
+<div class="row mb-4">
+    <div class="col-md-4 mb-3">
+        <div class="card bg-primary text-white h-100">
+            <div class="card-body text-center">
+                <h5 class="card-title">Баланс</h5>
+                <h3 class="display-4">{{ balance }} ₽</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card bg-success text-white h-100">
+            <div class="card-body text-center">
+                <h5 class="card-title">Доходы</h5>
+                <h3 class="display-4">{{ income }} ₽</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card bg-danger text-white h-100">
+            <div class="card-body text-center">
+                <h5 class="card-title">Расходы</h5>
+                <h3 class="display-4">{{ expense }} ₽</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ФОРМА ДОБАВЛЕНИЯ -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white fw-bold">Добавить операцию</div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('dashboard') }}">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <select name="type" class="form-select">
+                        <option value="income">Доход (+)</option>
+                        <option value="expense">Расход (-)</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <input type="number" step="0.01" name="amount" class="form-control" placeholder="Сумма" required>
+                </div>
+                <div class="col-md-4">
+                    <input type="text" name="category" class="form-control" placeholder="Категория (Еда, ЗП...)" required>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Сохранить</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ТАБЛИЦА ИСТОРИИ -->
+<div class="card shadow-sm">
+    <div class="card-header bg-white fw-bold">История операций</div>
+    <div class="card-body p-0">
+        {% if transactions %}
+        <div class="table-responsive">
+            <table class="table table-striped mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Дата</th>
+                        <th>Категория</th>
+                        <th>Тип</th>
+                        <th>Сумма</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in transactions %}
+                    <tr>
+                        <td>{{ t.date.strftime('%d.%m') }}</td>
+                        <td>{{ t.category }}</td>
+                        <td>
+                            {% if t.type == 'income' %}
+                                <span class="badge bg-success">Доход</span>
+                            {% else %}
+                                <span class="badge bg-danger">Расход</span>
+                            {% endif %}
+                        </td>
+                        <td class="fw-bold {% if t.type == 'income' %}text-success{% else %}text-danger{% endif %}">
+                            {{ t.amount }} ₽
+                        </td>
+                        <td>
+                            <a href="{{ url_for('delete_transaction', id=t.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Удалить?')">🗑</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-4 text-center text-muted">
+            Операций пока нет.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
