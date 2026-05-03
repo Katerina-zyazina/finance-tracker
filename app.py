@@ -166,8 +166,12 @@ def delete_credit(id):
         flash('Кредит закрыт и удален.', 'success')
     return redirect(url_for('dashboard'))
 
-# Запуск приложения
+# ============================================
+# ВАЖНО: Создаем таблицы ДО запуска приложения
+# ============================================
+with app.app_context():
+    db.create_all()
+
+# Запуск приложения (только для локальной разработки)
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     app.run(debug=True)
