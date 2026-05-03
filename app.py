@@ -18,6 +18,7 @@ class User(db.Model):
     username = db.Column(db.String(150), unique=True, nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
     transactions = db.relationship('Transaction', backref='user', lazy=True)
+    credits = db.relationship('Credit', backref='user', lazy=True)
 
 class Transaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -25,6 +26,13 @@ class Transaction(db.Model):
     category = db.Column(db.String(50), nullable=False)
     type = db.Column(db.String(10), nullable=False)
     date = db.Column(db.DateTime, default=db.func.current_timestamp())
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+class Credit(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    total_amount = db.Column(db.Float, nullable=False)
+    monthly_payment = db.Column(db.Float, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
 # Декоратор проверки авторизации
@@ -84,7 +92,8 @@ def logout():
 def dashboard():
     user_id = session['user_id']
 
-    if request.method == 'POST':
+    # Обработка добавления ТРАНЗАКЦИИ
+    if request.method == 'POST' and 'amount' in request.form:
         try:
             amount = float(request.form.get('amount'))
             category = request.form.get('category')
@@ -101,16 +110,41 @@ def dashboard():
             flash('Ошибка: введите корректные данные.', 'danger')
         return redirect(url_for('dashboard'))
 
+    # Обработка добавления КРЕДИТА
+    if request.method == 'POST' and 'credit_name' in request.form:
+        try:
+            c_name = request.form.get('credit_name')
+            c_total = float(request.form.get('credit_total'))
+            c_monthly = float(request.form.get('credit_monthly'))
+            
+            new_credit = Credit(name=c_name, total_amount=c_total, monthly_payment=c_monthly, user_id=user_id)
+            db.session.add(new_credit)
+            db.session.commit()
+            flash('Кредит добавлен в учет!', 'success')
+        except Exception as e:
+            flash('Ошибка при добавлении кредита.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    # Получение данных
     transactions = Transaction.query.filter_by(user_id=user_id).order_by(Transaction.date.desc()).all()
+    credits = Credit.query.filter_by(user_id=user_id).all()
+
     income = sum(t.amount for t in transactions if t.type == 'income')
     expense = sum(t.amount for t in transactions if t.type == 'expense')
     balance = income - expense
+    
+    # Считаем общую нагрузку по кредитам
+    total_debt_load = sum(c.monthly_payment for c in credits)
+    total_debt_amount = sum(c.total_amount for c in credits)
 
     return render_template('dashboard.html', 
                            transactions=transactions, 
                            balance=balance, 
                            income=income, 
-                           expense=expense)
+                           expense=expense,
+                           credits=credits,
+                           total_debt_load=total_debt_load,
+                           total_debt_amount=total_debt_amount)
 
 @app.route('/delete/<int:id>')
 @login_required
@@ -120,6 +154,16 @@ def delete_transaction(id):
         db.session.delete(trans)
         db.session.commit()
         flash('Запись удалена.', 'info')
+    return redirect(url_for('dashboard'))
+
+@app.route('/delete_credit/<int:id>')
+@login_required
+def delete_credit(id):
+    credit = Credit.query.get_or_404(id)
+    if credit.user_id == session['user_id']:
+        db.session.delete(credit)
+        db.session.commit()
+        flash('Кредит закрыт и удален.', 'success')
     return redirect(url_for('dashboard'))
 
 # Запуск приложения
