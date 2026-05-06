@@ -4,183 +4,255 @@
 
 {% block content %}
 
-<!-- КАРТОЧКИ СВОДКИ -->
-<div class="row mb-4">
-    <div class="col-md-3 mb-3">
-        <div class="card bg-primary text-white h-100 shadow-sm">
-            <div class="card-body text-center">
-                <h5 class="card-title">💰 Баланс</h5>
-                <h3 class="display-6 fw-bold">{{ balance }} ₽</h3>
-                <small>Доступно сейчас</small>
+<!-- СВОДНАЯ ИНФОРМАЦИЯ -->
+<div class="row mb-4 text-center">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white shadow">
+            <div class="card-body">
+                <h5>Баланс</h5>
+                <h3>{{ balance }} ₽</h3>
             </div>
         </div>
     </div>
-    <div class="col-md-3 mb-3">
-        <div class="card bg-success text-white h-100 shadow-sm">
-            <div class="card-body text-center">
-                <h5 class="card-title">📈 Доходы</h5>
-                <h3 class="display-6 fw-bold">{{ income }} ₽</h3>
-                <small>Всего получено</small>
+    <div class="col-md-3">
+        <div class="card bg-danger text-white shadow">
+            <div class="card-body">
+                <h5>Платежи по кредитам</h5>
+                <h3>{{ total_credits_load }} ₽/мес</h3>
             </div>
         </div>
     </div>
-    <div class="col-md-3 mb-3">
-        <div class="card bg-danger text-white h-100 shadow-sm">
-            <div class="card-body text-center">
-                <h5 class="card-title">📉 Расходы</h5>
-                <h3 class="display-6 fw-bold">{{ expense }} ₽</h3>
-                <small>Всего потрачено</small>
+    <div class="col-md-3">
+        <div class="card bg-success text-white shadow">
+            <div class="card-body">
+                <h5>Прибыль от вкладов</h5>
+                <h3>+{{ total_deposits_profit }} ₽</h3>
             </div>
         </div>
     </div>
-    <div class="col-md-3 mb-3">
-        <div class="card bg-dark text-white h-100 shadow-sm">
-            <div class="card-body text-center">
-                <h5 class="card-title">💳 Платежи по долгам</h5>
-                <h3 class="display-6 fw-bold">{{ total_debt_load }} ₽</h3>
-                <small>в месяц</small>
+    <div class="col-md-3">
+        <div class="card bg-warning text-dark shadow">
+            <div class="card-body">
+                <h5>Мне должны</h5>
+                <h3>{{ total_debts_owed }} ₽</h3>
             </div>
         </div>
     </div>
 </div>
 
-<!-- СЕКЦИЯ КРЕДИТОВ И ДОЛГОВ -->
-<div class="card shadow-sm mb-4 border-warning">
-    <div class="card-header bg-warning text-dark fw-bold d-flex justify-content-between align-items-center">
-        <span>🏦 Мои долги и кредиты</span>
-        <span class="badge bg-dark">Общий долг: {{ total_debt_amount }} ₽</span>
-    </div>
-    <div class="card-body">
-        
-        <!-- Форма добавления кредита -->
-        <form method="POST" action="{{ url_for('dashboard') }}" class="row g-2 mb-4">
-            <div class="col-md-4">
-                <input type="text" name="credit_name" class="form-control" placeholder="Название (напр. Ипотека, iPhone)" required>
-            </div>
-            <div class="col-md-3">
-                <input type="number" step="0.01" name="credit_total" class="form-control" placeholder="Общая сумма долга" required>
-            </div>
-            <div class="col-md-3">
-                <input type="number" step="0.01" name="credit_monthly" class="form-control" placeholder="Ежемесячный платёж" required>
-            </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-warning w-100 fw-bold">➕ Добавить</button>
-            </div>
-        </form>
+<!-- НАВИГАЦИЯ ПО ВКЛАДКАМ -->
+<ul class="nav nav-tabs mb-4" id="myTab" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="credits-tab" data-bs-toggle="tab" data-bs-target="#credits" type="button">💳 Кредиты и Долги</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="deposits-tab" data-bs-toggle="tab" data-bs-target="#deposits" type="button">🏦 Вклады</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="debts-tab" data-bs-toggle="tab" data-bs-target="#debts" type="button">🤝 Мне должны</button>
+    </li>
+</ul>
 
-        <!-- Таблица кредитов -->
-        {% if credits %}
+<div class="tab-content" id="myTabContent">
+    
+    <!-- ================= ВКЛАДКА 1: КРЕДИТЫ ================= -->
+    <div class="tab-pane fade show active" id="credits" role="tabpanel">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-danger text-white">Добавить кредит/рассрочку</div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('dashboard') }}">
+                    <div class="row g-2">
+                        <div class="col-md-3">
+                            <input type="text" name="credit_name" class="form-control" placeholder="Название (Ипотека, iPhone)" required>
+                        </div>
+                        <div class="col-md-2">
+                            <select name="credit_type" class="form-select">
+                                <option value="installment">Рассрочка</option>
+                                <option value="mortgage">Ипотека</option>
+                                <option value="loan">Кредит наличными</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="number" step="0.01" name="total_amount" class="form-control" placeholder="Вся сумма" required>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="number" step="0.01" name="monthly_payment" class="form-control" placeholder="Платеж/мес" required>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="number" step="0.01" name="amount_paid" class="form-control" placeholder="Уже выплачено" value="0">
+                        </div>
+                        <div class="col-md-1">
+                            <button type="submit" class="btn btn-danger w-100">OK</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Фильтр (JavaScript) -->
+        <div class="mb-3">
+            <button class="btn btn-outline-secondary btn-sm active" onclick="filterCredits('all')">Все</button>
+            <button class="btn btn-outline-secondary btn-sm" onclick="filterCredits('installment')">Только Рассрочки</button>
+            <button class="btn btn-outline-secondary btn-sm" onclick="filterCredits('mortgage')">Только Ипотека</button>
+        </div>
+
         <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead class="table-light">
+            <table class="table table-hover" id="creditsTable">
+                <thead class="table-dark">
                     <tr>
+                        <th>Тип</th>
                         <th>Название</th>
-                        <th>Общий долг</th>
-                        <th>Ежемесячный платёж</th>
-                        <th>Действие</th>
+                        <th>Остаток долга</th>
+                        <th>Платеж/мес</th>
+                        <th>Осталось (мес)</th>
+                        <th>Выплачено</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for c in credits %}
-                    <tr>
-                        <td class="fw-bold">{{ c.name }}</td>
-                        <td>{{ c.total_amount }} ₽</td>
-                        <td class="text-danger fw-bold">{{ c.monthly_payment }} ₽/мес</td>
+                    <tr data-type="{{ c.credit_type }}">
                         <td>
-                            <a href="{{ url_for('delete_credit', id=c.id) }}" 
-                               class="btn btn-sm btn-outline-success" 
-                               onclick="return confirm('Кредит полностью выплачен? Удалить из списка?')">
-                                ✅ Выплачен
-                            </a>
+                            {% if c.credit_type == 'mortgage' %} 🏠 Ипотека
+                            {% elif c.credit_type == 'loan' %}  Кредит
+                            {% else %} 📦 Рассрочка {% endif %}
                         </td>
+                        <td class="fw-bold">{{ c.name }}</td>
+                        <td class="text-danger">{{ c.remaining_amount }} ₽</td>
+                        <td>{{ c.monthly_payment }} ₽</td>
+                        <td><span class="badge bg-warning text-dark">{{ c.months_left }} мес</span></td>
+                        <td class="text-success">{{ c.amount_paid }} ₽</td>
+                        <td><a href="{{ url_for('delete_credit', id=c.id) }}" class="btn btn-sm btn-outline-danger"></a></td>
                     </tr>
+                    {% else %}
+                    <tr><td colspan="7" class="text-center">Кредитов нет</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-        {% else %}
-        <div class="text-center py-3 text-muted">
-            <p class="mb-0">🎉 У вас нет активных долгов и кредитов!</p>
-        </div>
-        {% endif %}
     </div>
-</div>
 
-<!-- ФОРМА ДОБАВЛЕНИЯ ОПЕРАЦИИ -->
-<div class="card shadow-sm mb-4">
-    <div class="card-header bg-white fw-bold">💸 Добавить операцию</div>
-    <div class="card-body">
-        <form method="POST" action="{{ url_for('dashboard') }}">
-            <div class="row g-2">
-                <div class="col-md-3">
-                    <select name="type" class="form-select">
-                        <option value="income">📥 Доход (+)</option>
-                        <option value="expense">📤 Расход (-)</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <input type="number" step="0.01" name="amount" class="form-control" placeholder="Сумма" required>
-                </div>
-                <div class="col-md-4">
-                    <input type="text" name="category" class="form-control" placeholder="Категория (Еда, Зарплата...)" required>
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100">Сохранить</button>
+    <!-- ================= ВКЛАДКА 2: ВКЛАДЫ ================= -->
+    <div class="tab-pane fade" id="deposits" role="tabpanel">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-success text-white">Открыть вклад</div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('dashboard') }}">
+                    <div class="row g-2">
+                        <div class="col-md-2">
+                            <input type="text" name="bank_name" class="form-control" placeholder="Банк" required>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="text" name="description" class="form-control" placeholder="Название вклада">
+                        </div>
+                        <div class="col-md-2">
+                            <input type="number" step="0.01" name="amount" class="form-control" placeholder="Сумма" required>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="number" step="0.1" name="interest_rate" class="form-control" placeholder="% Годовых" required>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="number" name="term_months" class="form-control" placeholder="Срок (мес)" required>
+                        </div>
+                        <div class="col-md-1">
+                            <button type="submit" class="btn btn-success w-100">OK</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="row">
+            {% for d in deposits %}
+            <div class="col-md-6 mb-3">
+                <div class="card border-success h-100">
+                    <div class="card-header bg-success text-white d-flex justify-content-between">
+                        <span>{{ d.bank_name }} - {{ d.description }}</span>
+                        <a href="{{ url_for('delete_deposit', id=d.id) }}" class="text-white">✕</a>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">Вложено: {{ d.amount }} ₽</h5>
+                        <p class="card-text text-muted">Ставка: {{ d.interest_rate }}% на {{ d.term_months }} мес.</p>
+                        <hr>
+                        <div class="d-flex justify-content-between">
+                            <span>Прибыль:</span>
+                            <span class="text-success fw-bold">+{{ d.total_profit }} ₽</span>
+                        </div>
+                        <div class="d-flex justify-content-between mt-2">
+                            <span class="fw-bold">Итого к получению:</span>
+                            <span class="fw-bold text-primary fs-5">{{ d.total_amount_end }} ₽</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </form>
+            {% else %}
+            <div class="col-12 text-center text-muted">Вкладов пока нет</div>
+            {% endfor %}
+        </div>
     </div>
+
+    <!-- ================= ВКЛАДКА 3: МНЕ ДОЛЖНЫ ================= -->
+    <div class="tab-pane fade" id="debts" role="tabpanel">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-warning text-dark">Кто должен мне?</div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('dashboard') }}">
+                    <div class="row g-2">
+                        <div class="col-md-3">
+                            <input type="text" name="debtor_name" class="form-control" placeholder="Имя должника" required>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="number" step="0.01" name="amount" class="form-control" placeholder="Сумма" required>
+                        </div>
+                        <div class="col-md-5">
+                            <input type="text" name="description" class="form-control" placeholder="За что должен?">
+                        </div>
+                        <div class="col-md-1">
+                            <button type="submit" class="btn btn-warning w-100">OK</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="list-group">
+            {% for debt in debts %}
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-1">{{ debt.debtor_name }}</h5>
+                    <small class="text-muted">{{ debt.description }}</small>
+                </div>
+                <div class="text-end">
+                    <span class="fs-5 fw-bold text-warning">{{ debt.amount }} ₽</span>
+                    <br>
+                    <a href="{{ url_for('delete_debt', id=debt.id) }}" class="btn btn-sm btn-outline-success mt-1">Вернул</a>
+                    <a href="{{ url_for('delete_debt', id=debt.id) }}" class="btn btn-sm btn-outline-danger mt-1">Удалить</a>
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center text-muted p-3">Никто не должен</div>
+            {% endfor %}
+        </div>
+    </div>
+
 </div>
 
-<!-- ТАБЛИЦА ИСТОРИИ ОПЕРАЦИЙ -->
-<div class="card shadow-sm">
-    <div class="card-header bg-white fw-bold">📊 История операций</div>
-    <div class="card-body p-0">
-        {% if transactions %}
-        <div class="table-responsive">
-            <table class="table table-striped mb-0 align-middle">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Дата</th>
-                        <th>Категория</th>
-                        <th>Тип</th>
-                        <th>Сумма</th>
-                        <th>Действия</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for t in transactions %}
-                    <tr>
-                        <td>{{ t.date.strftime('%d.%m.%Y %H:%M') }}</td>
-                        <td>{{ t.category }}</td>
-                        <td>
-                            {% if t.type == 'income' %}
-                                <span class="badge bg-success">Доход</span>
-                            {% else %}
-                                <span class="badge bg-danger">Расход</span>
-                            {% endif %}
-                        </td>
-                        <td class="fw-bold {% if t.type == 'income' %}text-success{% else %}text-danger{% endif %}">
-                            {{ '+' if t.type == 'income' else '-' }}{{ t.amount }} ₽
-                        </td>
-                        <td>
-                            <a href="{{ url_for('delete_transaction', id=t.id) }}" 
-                               class="btn btn-sm btn-outline-danger" 
-                               onclick="return confirm('Удалить эту запись?')">
-                                🗑
-                            </a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        <div class="p-4 text-center text-muted">
-            <p class="mb-0">Операций пока нет. Добавьте первую!</p>
-        </div>
-        {% endif %}
-    </div>
-</div>
+<!-- Скрипт для фильтрации кредитов -->
+<script>
+    function filterCredits(type) {
+        const rows = document.querySelectorAll('#creditsTable tbody tr');
+        rows.forEach(row => {
+            if (type === 'all' || row.getAttribute('data-type') === type) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        // Подсветка активной кнопки
+        document.querySelectorAll('.btn-outline-secondary').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+    }
+</script>
 
 {% endblock %}

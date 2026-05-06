@@ -3,32 +3,33 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 import os
+from datetime import datetime
 
 # Создание приложения Flask
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-me')
 
-#Настройка базы данных
+# Настройка базы данных
 if os.environ.get('DATABASE_URL'):
-    # Для Render (PostgreSQL)
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
-    # Фикс для современных версий SQLAlchemy + PostgreSQL
     app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI'].replace("postgres://", "postgresql://", 1)
 else:
-    # Для локального запуска (SQLite)
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///finance.db'
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-# Модели базы данных
+# --- МОДЕЛИ БАЗЫ ДАННЫХ ---
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
     transactions = db.relationship('Transaction', backref='user', lazy=True)
     credits = db.relationship('Credit', backref='user', lazy=True)
+    deposits = db.relationship('Deposit', backref='user', lazy=True)
+    debts_owed = db.relationship('DebtOwed', backref='user', lazy=True)
 
 class Transaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -38,14 +39,61 @@ class Transaction(db.Model):
     date = db.Column(db.DateTime, default=db.func.current_timestamp())
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
+# Обновленная модель Кредита
 class Credit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
+    credit_type = db.Column(db.String(50), default="installment") # mortgage, installment, loan
     total_amount = db.Column(db.Float, nullable=False)
     monthly_payment = db.Column(db.Float, nullable=False)
+    amount_paid = db.Column(db.Float, default=0.0) # Сколько уже выплачено
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
-# Декоратор проверки авторизации
+    # Вычисляемое свойство: Остаток долга
+    @property
+    def remaining_amount(self):
+        return self.total_amount - self.amount_paid
+
+    # Вычисляемое свойство: Сколько месяцев осталось
+    @property
+    def months_left(self):
+        if self.monthly_payment > 0:
+            return round(self.remaining_amount / self.monthly_payment, 1)
+        return 0
+
+# Новая модель Вкладов
+class Deposit(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    bank_name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(100), nullable=False)
+    amount = db.Column(db.Float, nullable=False) # Начальная сумма
+    interest_rate = db.Column(db.Float, nullable=False) # Годовая ставка %
+    term_months = db.Column(db.Integer, nullable=False) # Срок в месяцах
+    date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+    # Вычисляемое свойство: Итого к получению (простой процент)
+    @property
+    def total_profit(self):
+        # Формула: Сумма * (Ставка/100) * (Срок/12)
+        return self.amount * (self.interest_rate / 100) * (self.term_months / 12)
+
+    @property
+    def total_amount_end(self):
+        return self.amount + self.total_profit
+
+# Новая модель Долгов (Мне должны)
+class DebtOwed(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    debtor_name = db.Column(db.String(100), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    description = db.Column(db.String(200))
+    is_paid = db.Column(db.Boolean, default=False)
+    date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+# --- ДЕКОРАТОРЫ И МАРШРУТЫ ---
+
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -55,7 +103,6 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# Маршруты
 @app.route('/')
 def home():
     return redirect(url_for('login'))
@@ -73,7 +120,6 @@ def register():
         new_user = User(username=username, password_hash=generate_password_hash(password))
         db.session.add(new_user)
         db.session.commit()
-        
         flash('Регистрация успешна!', 'success')
         return redirect(url_for('login'))
     return render_template('register.html')
@@ -102,84 +148,132 @@ def logout():
 def dashboard():
     user_id = session['user_id']
 
-    # Обработка добавления ТРАНЗАКЦИИ
-    if request.method == 'POST' and 'amount' in request.form:
+    # 1. Обработка ТРАНЗАКЦИЙ
+    if request.method == 'POST' and 'amount' in request.form and 'credit_name' not in request.form and 'bank_name' not in request.form and 'debtor_name' not in request.form:
         try:
             amount = float(request.form.get('amount'))
             category = request.form.get('category')
             trans_type = request.form.get('type')
-            
-            if amount <= 0:
-                raise ValueError("Сумма должна быть положительной")
-
+            if amount <= 0: raise ValueError("Сумма > 0")
             new_trans = Transaction(amount=amount, category=category, type=trans_type, user_id=user_id)
             db.session.add(new_trans)
             db.session.commit()
             flash('Операция добавлена.', 'success')
-        except Exception as e:
-            flash('Ошибка: введите корректные данные.', 'danger')
+        except Exception as e: flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
-    # Обработка добавления КРЕДИТА
+    # 2. Обработка КРЕДИТОВ
     if request.method == 'POST' and 'credit_name' in request.form:
         try:
-            c_name = request.form.get('credit_name')
-            c_total = float(request.form.get('credit_total'))
-            c_monthly = float(request.form.get('credit_monthly'))
+            name = request.form.get('credit_name')
+            c_type = request.form.get('credit_type')
+            total = float(request.form.get('total_amount'))
+            monthly = float(request.form.get('monthly_payment'))
+            paid = float(request.form.get('amount_paid', 0))
             
-            new_credit = Credit(name=c_name, total_amount=c_total, monthly_payment=c_monthly, user_id=user_id)
+            new_credit = Credit(name=name, credit_type=c_type, total_amount=total, monthly_payment=monthly, amount_paid=paid, user_id=user_id)
             db.session.add(new_credit)
             db.session.commit()
-            flash('Кредит добавлен в учет!', 'success')
-        except Exception as e:
-            flash('Ошибка при добавлении кредита.', 'danger')
+            flash('Кредит добавлен!', 'success')
+        except Exception as e: flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
-    # Получение данных
-    transactions = Transaction.query.filter_by(user_id=user_id).order_by(Transaction.date.desc()).all()
-    credits = Credit.query.filter_by(user_id=user_id).all()
+    # 3. Обработка ВКЛАДОВ
+    if request.method == 'POST' and 'bank_name' in request.form:
+        try:
+            bank = request.form.get('bank_name')
+            desc = request.form.get('description')
+            amount = float(request.form.get('amount'))
+            rate = float(request.form.get('interest_rate'))
+            term = int(request.form.get('term_months'))
+            
+            new_dep = Deposit(bank_name=bank, description=desc, amount=amount, interest_rate=rate, term_months=term, user_id=user_id)
+            db.session.add(new_dep)
+            db.session.commit()
+            flash('Вклад открыт!', 'success')
+        except Exception as e: flash('Ошибка: ' + str(e), 'danger')
+        return redirect(url_for('dashboard'))
 
+    # 4. Обработка ДОЛГОВ (Мне должны)
+    if request.method == 'POST' and 'debtor_name' in request.form:
+        try:
+            debtor = request.form.get('debtor_name')
+            amount = float(request.form.get('amount'))
+            desc = request.form.get('description')
+            
+            new_debt = DebtOwed(debtor_name=debtor, amount=amount, description=desc, user_id=user_id)
+            db.session.add(new_debt)
+            db.session.commit()
+            flash('Долг записан!', 'success')
+        except Exception as e: flash('Ошибка: ' + str(e), 'danger')
+        return redirect(url_for('dashboard'))
+
+    # Сбор данных для отображения
+    transactions = Transaction.query.filter_by(user_id=user_id).order_by(Transaction.date.desc()).all()
+    
+    # Кредиты (получаем все, фильтр будем делать в HTML или тут)
+    all_credits = Credit.query.filter_by(user_id=user_id).all()
+    
+    # Вклады
+    deposits = Deposit.query.filter_by(user_id=user_id).all()
+    
+    # Долги
+    debts = DebtOwed.query.filter_by(user_id=user_id).all()
+
+    # Сводка
     income = sum(t.amount for t in transactions if t.type == 'income')
     expense = sum(t.amount for t in transactions if t.type == 'expense')
     balance = income - expense
     
-    # Считаем общую нагрузку по кредитам
-    total_debt_load = sum(c.monthly_payment for c in credits)
-    total_debt_amount = sum(c.total_amount for c in credits)
+    # Сводка по долгам и вкладам
+    total_credits_load = sum(c.monthly_payment for c in all_credits)
+    total_deposits_profit = sum(d.total_profit for d in deposits)
+    total_deposits_end = sum(d.total_amount_end for d in deposits)
+    total_debts_owed = sum(d.amount for d in debts if not d.is_paid)
 
     return render_template('dashboard.html', 
                            transactions=transactions, 
-                           balance=balance, 
-                           income=income, 
-                           expense=expense,
-                           credits=credits,
-                           total_debt_load=total_debt_load,
-                           total_debt_amount=total_debt_amount)
+                           balance=balance, income=income, expense=expense,
+                           credits=all_credits,
+                           deposits=deposits,
+                           debts=debts,
+                           total_credits_load=total_credits_load,
+                           total_deposits_profit=total_deposits_profit,
+                           total_deposits_end=total_deposits_end,
+                           total_debts_owed=total_debts_owed)
 
-@app.route('/delete/<int:id>')
+# Удаление записей
+@app.route('/delete_trans/<int:id>')
 @login_required
 def delete_transaction(id):
-    trans = Transaction.query.get_or_404(id)
-    if trans.user_id == session['user_id']:
-        db.session.delete(trans)
-        db.session.commit()
-        flash('Запись удалена.', 'info')
+    t = Transaction.query.get_or_404(id)
+    if t.user_id == session['user_id']: db.session.delete(t); db.session.commit()
     return redirect(url_for('dashboard'))
 
 @app.route('/delete_credit/<int:id>')
 @login_required
 def delete_credit(id):
-    credit = Credit.query.get_or_404(id)
-    if credit.user_id == session['user_id']:
-        db.session.delete(credit)
-        db.session.commit()
-        flash('Кредит закрыт и удален.', 'success')
+    c = Credit.query.get_or_404(id)
+    if c.user_id == session['user_id']: db.session.delete(c); db.session.commit()
     return redirect(url_for('dashboard'))
 
-#Создаем таблицы ДО запуска приложения
+@app.route('/delete_deposit/<int:id>')
+@login_required
+def delete_deposit(id):
+    d = Deposit.query.get_or_404(id)
+    if d.user_id == session['user_id']: db.session.delete(d); db.session.commit()
+    return redirect(url_for('dashboard'))
+
+@app.route('/delete_debt/<int:id>')
+@login_required
+def delete_debt(id):
+    d = DebtOwed.query.get_or_404(id)
+    if d.user_id == session['user_id']: db.session.delete(d); db.session.commit()
+    return redirect(url_for('dashboard'))
+
+# Создание таблиц
 with app.app_context():
     db.create_all()
 
-# Запуск приложения (только для локальной разработки)
 if __name__ == '__main__':
     app.run(debug=True)
