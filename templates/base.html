@@ -4,68 +4,173 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Finance Tracker{% endblock %}</title>
-    <!-- Подключаем Bootstrap 5 -->
+    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Шрифт Google Fonts (по желанию) -->
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
     <style>
-        body { font-family: 'Roboto', sans-serif; }
+        :root {
+            --primary-gradient: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+            --success-gradient: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            --danger-gradient: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%);
+            --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            --body-bg: #F3F4F6;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--body-bg);
+            color: #1F2937;
+        }
+
+        /* Навигация */
+        .navbar {
+            background: #ffffff !important;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            padding: 1rem 0;
+        }
+        .navbar-brand {
+            font-weight: 700;
+            color: #4F46E5 !important;
+            font-size: 1.25rem;
+        }
+
+        /* Карточки */
+        .card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.2s;
+            background: #ffffff;
+        }
+        .card:hover {
+            transform: translateY(-3px);
+        }
+
+        /* Статистика */
+        .stat-card {
+            color: white;
+            border-radius: 20px;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0; right: 0; bottom: 0; left: 0;
+            background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+        }
+        .bg-gradient-primary { background: var(--primary-gradient); }
+        .bg-gradient-success { background: var(--success-gradient); }
+        .bg-gradient-danger { background: var(--danger-gradient); }
+        .bg-gradient-warning { background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); }
+        .bg-gradient-info { background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); }
+
+        /* Формы */
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 1px solid #E5E7EB;
+            padding: 0.6rem 1rem;
+            background-color: #F9FAFB;
+        }
+        .form-control:focus, .form-select:focus {
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+            border-color: #4F46E5;
+            background-color: #fff;
+        }
+
+        /* Кнопки */
+        .btn-primary {
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 10px;
+            padding: 0.6rem 1.2rem;
+            font-weight: 500;
+        }
+        .btn-primary:hover { opacity: 0.9; }
+
+        /* Вкладки */
+        .nav-tabs { border-bottom: none; gap: 10px; margin-bottom: 20px; }
+        .nav-link {
+            border: none;
+            border-radius: 12px;
+            color: #6B7280;
+            font-weight: 500;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+        .nav-link.active {
+            color: #4F46E5;
+            background: #EEF2FF;
+            box-shadow: none;
+        }
+
+        /* Таблицы */
+        .table thead th {
+            border-bottom: 2px solid #F3F4F6;
+            color: #9CA3AF;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        .table td { vertical-align: middle; }
+        
+        /* Бейджи */
+        .badge {
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .floating-alert {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 1050;
+            min-width: 300px;
+        }
     </style>
 </head>
-<body class="bg-light">
+<body>
 
     <!-- Навигация -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+    <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="/">💰 Finance Tracker</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    {% if session.get('user_id') %}
-                        <li class="nav-item">
-                            <span class="nav-link text-white-50">Привет, {{ session.get('username') }}!</span>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-white" href="{{ url_for('logout') }}">Выйти</a>
-                        </li>
-                    {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link text-white" href="{{ url_for('login') }}">Войти</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link btn btn-light text-primary ms-2 px-3" href="{{ url_for('register') }}">Регистрация</a>
-                        </li>
-                    {% endif %}
-                </ul>
+            <a class="navbar-brand" href="/"><i class="bi bi-wallet2 me-2"></i>Finance Tracker</a>
+            <div class="d-flex align-items-center">
+                {% if session.get('user_id') %}
+                    <span class="me-3 text-muted small fw-bold d-none d-md-block"> {{ session.get('username') }}</span>
+                    <a href="{{ url_for('logout') }}" class="btn btn-sm btn-outline-secondary">Выйти</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="btn btn-primary btn-sm px-4">Войти</a>
+                {% endif %}
             </div>
         </div>
     </nav>
 
-    <!-- Всплывающие сообщения -->
-    <div class="container mt-3">
+    <!-- Алерты -->
+    <div class="container floating-alert">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+                    <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm border-0" role="alert">
                         {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
     </div>
 
-    <!-- Основной контент -->
-    <main class="container py-4">
+    <main class="container py-5">
         {% block content %}{% endblock %}
     </main>
 
-    <!-- Скрипты Bootstrap -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Chart.js (если нужен график) -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </body>
 </html>

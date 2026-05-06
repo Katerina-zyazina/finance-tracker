@@ -1,51 +1,28 @@
 {% extends "base.html" %}
 
-{% block title %}Регистрация{% endblock %}
-
 {% block content %}
-<div class="row justify-content-center">
+<div class="row justify-content-center mt-5">
     <div class="col-md-5 col-lg-4">
-        <div class="card shadow-sm border-0 rounded-3">
-            <div class="card-body p-4">
-                <h3 class="card-title text-center mb-4">📝 Регистрация</h3>
-                
-                <!-- Форма отправляет данные методом POST на маршрут /register -->
-                <form method="POST" action="{{ url_for('register') }}">
-                    
-                    <!-- Поле Логин -->
-                    <div class="mb-3">
-                        <label for="username" class="form-label">Придумайте логин</label>
-                        <input type="text" 
-                               class="form-control" 
-                               id="username" 
-                               name="username" 
-                               placeholder="Например: student_2026" 
-                               required>
-                    </div>
-
-                    <!-- Поле Пароль -->
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Придумайте пароль</label>
-                        <input type="password" 
-                               class="form-control" 
-                               id="password" 
-                               name="password" 
-                               placeholder="Минимум 6 символов" 
-                               required>
-                    </div>
-
-                    <!-- Кнопка отправки -->
-                    <button type="submit" class="btn btn-success w-100">
-                        Зарегистрироваться
-                    </button>
-                </form>
-
-                <div class="text-center mt-3">
-                    <small class="text-muted">
-                        Уже есть аккаунт? <a href="{{ url_for('login') }}">Войти</a>
-                    </small>
-                </div>
+        <div class="card p-4 shadow-lg border-0">
+            <div class="text-center mb-4">
+                <h3 class="fw-bold">Регистрация</h3>
+                <p class="text-muted">Создайте аккаунт для учета финансов</p>
             </div>
+            <form method="POST">
+                <div class="mb-3">
+                    <label class="form-label small text-muted">Придумайте логин</label>
+                    <input type="text" name="username" class="form-control form-control-lg" required>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label small text-muted">Придумайте пароль</label>
+                    <input type="password" name="password" class="form-control form-control-lg" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 btn-lg mb-3">Создать аккаунт</button>
+                <div class="text-center">
+                    <span class="text-muted">Уже есть аккаунт?</span>
+                    <a href="{{ url_for('login') }}" class="fw-bold text-decoration-none">Войти</a>
+                </div>
+            </form>
         </div>
     </div>
 </div>
