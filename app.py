@@ -7,7 +7,17 @@ import os
 # Создание приложения Flask
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-me')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///finance.db'
+
+#Настройка базы данных
+if os.environ.get('DATABASE_URL'):
+    # Для Render (PostgreSQL)
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
+    # Фикс для современных версий SQLAlchemy + PostgreSQL
+    app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI'].replace("postgres://", "postgresql://", 1)
+else:
+    # Для локального запуска (SQLite)
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///finance.db'
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -166,9 +176,7 @@ def delete_credit(id):
         flash('Кредит закрыт и удален.', 'success')
     return redirect(url_for('dashboard'))
 
-# ============================================
-# ВАЖНО: Создаем таблицы ДО запуска приложения
-# ============================================
+#Создаем таблицы ДО запуска приложения
 with app.app_context():
     db.create_all()
 
