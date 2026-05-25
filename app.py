@@ -3,12 +3,14 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 import os
+from datetime import datetime, timedelta
+import math
 
 # Создание приложения Flask
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-me')
 
-# Настройка базы данных (SQLite локально, PostgreSQL на Render)
+# Настройка базы данных
 if os.environ.get('DATABASE_URL'):
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
     app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI'].replace("postgres://", "postgresql://", 1)
@@ -19,6 +21,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 # ================= МОДЕЛИ =================
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
@@ -33,24 +36,43 @@ class Transaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     amount = db.Column(db.Float, nullable=False)
     category = db.Column(db.String(50), nullable=False)
-    type = db.Column(db.String(10), nullable=False) # income / expense
+    type = db.Column(db.String(10), nullable=False)
     date = db.Column(db.DateTime, default=db.func.current_timestamp())
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
+# Обновленная модель Кредита
 class Credit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    credit_type = db.Column(db.String(50), default="installment") # mortgage, installment, loan
-    total_amount = db.Column(db.Float, nullable=False)
-    monthly_payment = db.Column(db.Float, nullable=False)
-    amount_paid = db.Column(db.Float, default=0.0)
+    total_amount = db.Column(db.Float, nullable=False) # Сумма взятая
+    interest_rate = db.Column(db.Float, nullable=False) # Годовая ставка %
+    monthly_payment_fixed = db.Column(db.Float, nullable=False) # Желаемый платеж или расчетный
+    start_date = db.Column(db.DateTime, default=datetime.utcnow)
+    is_active = db.Column(db.Boolean, default=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    
+    # Связь с историей платежей
+    payments = db.relationship('CreditPayment', backref='credit', lazy=True, order_by="CreditPayment.due_date.asc()")
 
     @property
-    def remaining_amount(self): return self.total_amount - self.amount_paid
+    def total_paid(self):
+        return sum(p.amount_paid for p in self.payments if p.is_paid)
+
     @property
-    def months_left(self):
-        return round(self.remaining_amount / self.monthly_payment, 1) if self.monthly_payment > 0 else 0
+    def remaining_debt(self):
+        # Упрощенный расчет остатка: Сумма - Выплачено
+        # В реальности нужно учитывать проценты, но для трекинга "сколько осталось внести" этого достаточно
+        return max(0, self.total_amount - self.total_paid)
+
+# Новая модель: История платежей по кредиту
+class CreditPayment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    credit_id = db.Column(db.Integer, db.ForeignKey('credit.id'), nullable=False)
+    due_date = db.Column(db.DateTime, nullable=False) # Дата платежа
+    amount_due = db.Column(db.Float, nullable=False)   # Сколько нужно внести
+    amount_paid = db.Column(db.Float, default=0.0)     # Сколько внесено фактически
+    is_paid = db.Column(db.Boolean, default=False)
+    note = db.Column(db.String(200))
 
 class Deposit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -78,10 +100,10 @@ class DebtOwed(db.Model):
 
 class Subscription(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    service_name = db.Column(db.String(100), nullable=False) # Netflix, Yandex, etc.
-    plan_name = db.Column(db.String(100), nullable=False)    # Premium, Family, etc.
+    service_name = db.Column(db.String(100), nullable=False)
+    plan_name = db.Column(db.String(100), nullable=False)
     cost = db.Column(db.Float, nullable=False)
-    billing_cycle = db.Column(db.String(20), default="monthly") # monthly, yearly
+    billing_cycle = db.Column(db.String(20), default="monthly")
     is_active = db.Column(db.Boolean, default=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
@@ -96,6 +118,7 @@ def login_required(f):
     return decorated_function
 
 # ================= МАРШРУТЫ =================
+
 @app.route('/')
 def home(): return redirect(url_for('login'))
 
@@ -143,18 +166,81 @@ def dashboard():
         except Exception as e: flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
-    # 2. Кредиты
+    # 2. Создание КРЕДИТА с графиком
     if request.method == 'POST' and 'credit_name' in request.form:
         try:
-            name, c_type = request.form.get('credit_name'), request.form.get('credit_type')
-            total, monthly, paid = float(request.form.get('total_amount')), float(request.form.get('monthly_payment')), float(request.form.get('amount_paid', 0))
-            db.session.add(Credit(name=name, credit_type=c_type, total_amount=total, monthly_payment=monthly, amount_paid=paid, user_id=user_id))
+            name = request.form.get('credit_name')
+            total = float(request.form.get('total_amount'))
+            rate = float(request.form.get('interest_rate'))
+            fixed_payment = float(request.form.get('monthly_payment_fixed'))
+            
+            # Создаем кредит
+            new_credit = Credit(name=name, total_amount=total, interest_rate=rate, monthly_payment_fixed=fixed_payment, user_id=user_id)
+            db.session.add(new_credit)
+            db.session.flush() # Чтобы получить ID кредита до коммита
+
+            # Генерируем график платежей
+            # Рассчитываем примерное количество месяцев
+            months_count = math.ceil(total / fixed_payment) if fixed_payment > 0 else 12
+            
+            current_date = datetime.utcnow()
+            remaining_balance = total
+
+            for i in range(months_count):
+                # Дата следующего платежа (каждый месяц)
+                next_date = current_date.replace(day=current_date.day) + timedelta(days=30*i)
+                
+                # Если остаток меньше фиксированного платежа, платим остаток
+                payment_amount = min(fixed_payment, remaining_balance)
+                
+                if payment_amount <= 0: break
+
+                payment_record = CreditPayment(
+                    credit_id=new_credit.id,
+                    due_date=next_date,
+                    amount_due=payment_amount,
+                    amount_paid=0.0,
+                    is_paid=False
+                )
+                db.session.add(payment_record)
+                remaining_balance -= payment_amount
+
             db.session.commit()
-            flash('Кредит добавлен!', 'success')
-        except Exception as e: flash('Ошибка: ' + str(e), 'danger')
+            flash('Кредит и график платежей созданы!', 'success')
+        except Exception as e: 
+            db.session.rollback()
+            flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
-    # 3. Вклады
+    # 3. Внесение ПЛАТЕЖА по кредиту
+    if request.method == 'POST' and 'payment_id' in request.form:
+        try:
+            pay_id = int(request.form.get('payment_id'))
+            paid_amount = float(request.form.get('paid_amount'))
+            note = request.form.get('note', '')
+            
+            payment = CreditPayment.query.get_or_404(pay_id)
+            if payment.credit.user_id == user_id:
+                payment.amount_paid = paid_amount
+                payment.is_paid = True
+                payment.note = note
+                
+                # Также создаем транзакцию расхода автоматически
+                trans = Transaction(
+                    amount=paid_amount, 
+                    category=f"Платеж: {payment.credit.name}", 
+                    type='expense', 
+                    user_id=user_id
+                )
+                db.session.add(trans)
+                db.session.commit()
+                flash('Платеж внесен!', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash('Ошибка: ' + str(e), 'danger')
+        return redirect(url_for('dashboard'))
+
+    # 4. Вклады
     if request.method == 'POST' and 'bank_name' in request.form:
         try:
             bank, desc = request.form.get('bank_name'), request.form.get('description')
@@ -165,7 +251,7 @@ def dashboard():
         except Exception as e: flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
-    # 4. Долги (Мне должны)
+    # 5. Долги
     if request.method == 'POST' and 'debtor_name' in request.form:
         try:
             debtor, amount, desc = request.form.get('debtor_name'), float(request.form.get('amount')), request.form.get('description')
@@ -175,7 +261,7 @@ def dashboard():
         except Exception as e: flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
-    # 5. Подписки
+    # 6. Подписки
     if request.method == 'POST' and 'service_name' in request.form:
         try:
             service, plan = request.form.get('service_name'), request.form.get('plan_name')
@@ -197,16 +283,23 @@ def dashboard():
     expense = sum(t.amount for t in transactions if t.type == 'expense')
     balance = income - expense
     
-    total_credits_load = sum(c.monthly_payment for c in credits)
-    total_deposits_profit = sum(d.total_profit for d in deposits)
-    total_debts_owed = sum(d.amount for d in debts if not d.is_paid)
+    # Считаем текущую нагрузку (ближайшие платежи)
+    today = datetime.utcnow()
+    upcoming_payments = 0
+    for c in credits:
+        for p in c.payments:
+            if not p.is_paid and p.due_date >= today and p.due_date < today + timedelta(days=30):
+                upcoming_payments += p.amount_due
+
     total_subscriptions = sum(s.cost for s in subscriptions)
+    total_debts_owed = sum(d.amount for d in debts if not d.is_paid)
 
     return render_template('dashboard.html', 
                            transactions=transactions, balance=balance, income=income, expense=expense,
                            credits=credits, deposits=deposits, debts=debts, subscriptions=subscriptions,
-                           total_credits_load=total_credits_load, total_deposits_profit=total_deposits_profit,
-                           total_debts_owed=total_debts_owed, total_subscriptions=total_subscriptions)
+                           upcoming_payments=upcoming_payments,
+                           total_subscriptions=total_subscriptions,
+                           total_debts_owed=total_debts_owed)
 
 # Удаления
 @app.route('/delete_trans/<int:id>')
@@ -220,7 +313,11 @@ def delete_transaction(id):
 @login_required
 def delete_credit(id):
     c = Credit.query.get_or_404(id)
-    if c.user_id == session['user_id']: db.session.delete(c); db.session.commit()
+    if c.user_id == session['user_id']: 
+        # Удаляем связанные платежи
+        for p in c.payments: db.session.delete(p)
+        db.session.delete(c)
+        db.session.commit()
     return redirect(url_for('dashboard'))
 
 @app.route('/delete_deposit/<int:id>')
