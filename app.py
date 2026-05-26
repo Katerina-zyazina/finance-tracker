@@ -46,7 +46,10 @@ class Credit(db.Model):
     total_amount = db.Column(db.Float, nullable=False)
     interest_rate = db.Column(db.Float, nullable=False)
     monthly_payment_fixed = db.Column(db.Float, nullable=False)
-    payment_day = db.Column(db.Integer, default=1)
+    payment_frequency = db.Column(db.String(20), default="monthly")  # monthly или biweekly
+    payment_day = db.Column(db.Integer, default=1)  # День месяца (1-28) или день недели (0-6)
+    start_month = db.Column(db.Integer, default=datetime.utcnow().month)
+    start_year = db.Column(db.Integer, default=datetime.utcnow().year)
     start_date = db.Column(db.DateTime, default=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -116,15 +119,19 @@ def login_required(f):
 # ================= ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =================
 
 def add_months(source_date, months):
-    """Добавляет месяцы к дате без использования dateutil"""
+    """Добавляет месяцы к дате"""
     month = source_date.month - 1 + months
     year = source_date.year + month // 12
     month = month % 12 + 1
     day = min(source_date.day, [31,29 if year%4==0 and not year%100==0 or year%400==0 else 28,31,30,31,30,31,31,30,31,30,31][month-1])
     return source_date.replace(year=year, month=month, day=day)
 
-def generate_payment_schedule(credit, start_date=None):
-    """Генерирует график платежей"""
+def add_weeks(source_date, weeks):
+    """Добавляет недели к дате"""
+    return source_date + timedelta(weeks=weeks)
+
+def generate_payment_schedule(credit):
+    """Генерирует график платежей с учётом частоты"""
     # Удаляем все непроведенные платежи
     for p in credit.payments:
         if not p.is_paid:
@@ -135,23 +142,15 @@ def generate_payment_schedule(credit, start_date=None):
     if remaining_balance <= 0:
         return
     
-    payment_day = credit.payment_day if credit.payment_day else (start_date.day if start_date else datetime.utcnow().day)
-    current_date = start_date if start_date else datetime.utcnow()
-    
-    # Если день платежа уже прошел, начинаем со следующего месяца
-    if current_date.day > payment_day:
-        current_date = add_months(current_date, 1)
-    
-    # Устанавливаем день платежа
+    # Определяем дату начала
     try:
-        current_date = current_date.replace(day=payment_day)
-    except ValueError:
-        # Последний день месяца если такого дня нет
-        current_date = add_months(current_date, 1)
-        current_date = current_date.replace(day=1) - timedelta(days=1)
+        start_date = datetime(credit.start_year, credit.start_month, 1)
+    except:
+        start_date = datetime.utcnow()
     
+    current_date = start_date
     payment_count = 0
-    max_payments = 120
+    max_payments = 240  # Максимум 20 лет
     
     while remaining_balance > 0 and payment_count < max_payments:
         payment_amount = min(credit.monthly_payment_fixed, remaining_balance)
@@ -166,7 +165,15 @@ def generate_payment_schedule(credit, start_date=None):
         db.session.add(payment_record)
         
         remaining_balance -= payment_amount
-        current_date = add_months(current_date, 1)
+        
+        # Определяем следующую дату платежа
+        if credit.payment_frequency == "biweekly":
+            # Каждые 2 недели
+            current_date = add_weeks(current_date, 2)
+        else:
+            # Ежемесячно
+            current_date = add_months(current_date, 1)
+        
         payment_count += 1
 
 # ================= МАРШРУТЫ =================
@@ -225,14 +232,20 @@ def dashboard():
             total = float(request.form.get('total_amount'))
             rate = float(request.form.get('interest_rate'))
             fixed_payment = float(request.form.get('monthly_payment_fixed'))
-            payment_day = int(request.form.get('payment_day', datetime.utcnow().day))
+            frequency = request.form.get('payment_frequency', 'monthly')
+            payment_day = int(request.form.get('payment_day', 1))
+            start_month = int(request.form.get('start_month', datetime.utcnow().month))
+            start_year = int(request.form.get('start_year', datetime.utcnow().year))
             
             new_credit = Credit(
                 name=name, 
                 total_amount=total, 
                 interest_rate=rate, 
                 monthly_payment_fixed=fixed_payment,
+                payment_frequency=frequency,
                 payment_day=payment_day,
+                start_month=start_month,
+                start_year=start_year,
                 user_id=user_id
             )
             db.session.add(new_credit)
@@ -246,7 +259,7 @@ def dashboard():
             flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
-    # 3. Внесение ПЛАТЕЖА
+    # 3. Внесение ПЛАТЕЖА с созданием транзакции
     if request.method == 'POST' and 'payment_id' in request.form:
         try:
             pay_id = int(request.form.get('payment_id'))
@@ -258,7 +271,19 @@ def dashboard():
                 payment.amount_paid = paid_amount
                 payment.is_paid = True
                 payment.note = note
+                
+                # Создаём транзакцию расхода!
+                trans = Transaction(
+                    amount=paid_amount, 
+                    category=f"Кредит: {payment.credit.name}", 
+                    type='expense', 
+                    user_id=user_id
+                )
+                db.session.add(trans)
+                
+                # Пересчитываем график
                 generate_payment_schedule(payment.credit)
+                
                 db.session.commit()
                 flash('Платеж внесен! График пересчитан.', 'success')
         except Exception as e:
