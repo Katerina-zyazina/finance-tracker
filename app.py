@@ -6,11 +6,9 @@ import os
 from datetime import datetime, timedelta
 import math
 
-# Создание приложения Flask
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-me')
 
-# Настройка базы данных
 if os.environ.get('DATABASE_URL'):
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
     app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI'].replace("postgres://", "postgresql://", 1)
@@ -57,12 +55,20 @@ class Credit(db.Model):
     payments = db.relationship('CreditPayment', backref='credit', lazy=True, order_by="CreditPayment.due_date.asc()")
 
     @property
+    def total_with_interest(self):
+        """Общая сумма с процентами"""
+        if self.interest_rate > 0:
+            return self.total_amount * (1 + self.interest_rate / 100)
+        return self.total_amount
+
+    @property
     def total_paid(self):
         return sum(p.amount_paid for p in self.payments if p.is_paid)
 
     @property
     def remaining_debt(self):
-        return max(0, self.total_amount - self.total_paid)
+        """Остаток с учётом процентов"""
+        return max(0, self.total_with_interest - self.total_paid)
 
 class CreditPayment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -119,7 +125,6 @@ def login_required(f):
 # ================= ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =================
 
 def add_months(source_date, months):
-    """Добавляет месяцы к дате"""
     month = source_date.month - 1 + months
     year = source_date.year + month // 12
     month = month % 12 + 1
@@ -127,28 +132,21 @@ def add_months(source_date, months):
     return source_date.replace(year=year, month=month, day=day)
 
 def add_weeks(source_date, weeks):
-    """Добавляет недели к дате"""
     return source_date + timedelta(weeks=weeks)
 
 def generate_payment_schedule(credit):
     """Генерирует график платежей с учётом процентов"""
-    # Удаляем все непроведенные платежи
     for p in credit.payments:
         if not p.is_paid:
             db.session.delete(p)
     db.session.flush()
     
-    # Рассчитываем общую сумму с процентами
-    total_with_interest = credit.total_amount
-    if credit.interest_rate > 0:
-        total_with_interest = credit.total_amount * (1 + credit.interest_rate / 100)
-    
+    total_with_interest = credit.total_with_interest
     remaining_balance = total_with_interest - credit.total_paid
     
     if remaining_balance <= 0:
         return
     
-    # Определяем дату начала
     try:
         start_date = datetime(credit.start_year, credit.start_month, 1)
     except:
@@ -262,7 +260,7 @@ def dashboard():
             flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
-    # 3. Внесение ПЛАТЕЖА (без создания транзакции!)
+    # 3. Внесение ПЛАТЕЖА (с созданием транзакции расхода!)
     if request.method == 'POST' and 'payment_id' in request.form:
         try:
             pay_id = int(request.form.get('payment_id'))
@@ -274,6 +272,16 @@ def dashboard():
                 payment.amount_paid = paid_amount
                 payment.is_paid = True
                 payment.note = note
+                
+                # Создаём транзакцию расхода для платежа по кредиту
+                trans = Transaction(
+                    amount=paid_amount, 
+                    category=f"Кредит: {payment.credit.name}", 
+                    type='expense', 
+                    user_id=user_id
+                )
+                db.session.add(trans)
+                
                 generate_payment_schedule(payment.credit)
                 db.session.commit()
                 flash('Платеж внесен! График пересчитан.', 'success')
@@ -321,9 +329,18 @@ def dashboard():
     debts = DebtOwed.query.filter_by(user_id=user_id).all()
     subscriptions = Subscription.query.filter_by(user_id=user_id, is_active=True).all()
 
+    # ПРАВИЛЬНЫЙ РАСЧЁТ:
     income = sum(t.amount for t in transactions if t.type == 'income')
     expense = sum(t.amount for t in transactions if t.type == 'expense')
-    balance = income - expense
+    
+    # Добавляем подписки к расходам
+    subscriptions_total = sum(s.cost for s in subscriptions)
+    
+    # Общие расходы = транзакции расходы + подписки
+    total_expenses = expense + subscriptions_total
+    
+    # Баланс = доходы - расходы
+    balance = income - total_expenses
     
     today = datetime.utcnow()
     one_month_later = add_months(today, 1)
@@ -333,20 +350,19 @@ def dashboard():
             if not p.is_paid and p.due_date >= today and p.due_date <= one_month_later:
                 upcoming_payments += p.amount_due
 
-    total_subscriptions = sum(s.cost for s in subscriptions)
     total_debts_owed = sum(d.amount for d in debts if not d.is_paid)
 
     return render_template('dashboard.html', 
                            transactions=transactions, 
                            balance=balance, 
                            income=income, 
-                           expense=expense,
+                           expense=total_expenses,  # Передаём общие расходы
                            credits=credits, 
                            deposits=deposits, 
                            debts=debts, 
                            subscriptions=subscriptions,
                            upcoming_payments=upcoming_payments,
-                           total_subscriptions=total_subscriptions,
+                           total_subscriptions=subscriptions_total,
                            total_debts_owed=total_debts_owed,
                            now=datetime.utcnow())
 
@@ -389,7 +405,6 @@ def delete_subscription(id):
     if s.user_id == session['user_id']: db.session.delete(s); db.session.commit()
     return redirect(url_for('dashboard'))
 
-# Инициализация БД
 with app.app_context():
     db.create_all()
 

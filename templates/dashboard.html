@@ -15,29 +15,65 @@
 
 <!-- Карточки статистики -->
 <div class="row g-4 mb-5">
-    <div class="col-md-3">
-        <div class="stat-card bg-gradient-primary h-100">
-            <h6 class="opacity-75 mb-2">Баланс</h6>
-            <h2 class="fw-bold mb-0">{{ balance }} ₽</h2>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="stat-card bg-gradient-danger h-100">
-            <h6 class="opacity-75 mb-2">Ближайшие платежи</h6>
-            <h2 class="fw-bold mb-0">{{ upcoming_payments }} ₽</h2>
-            <small class="opacity-75">В этом месяце</small>
-        </div>
-    </div>
-    <div class="col-md-3">
+    <div class="col-md-4">
         <div class="stat-card bg-gradient-success h-100">
-            <h6 class="opacity-75 mb-2">Чистый доход</h6>
-            <h2 class="fw-bold mb-0">{{ income - expense }} ₽</h2>
+            <h6 class="opacity-75 mb-2">💰 Доходы</h6>
+            <h2 class="fw-bold mb-0">{{ income }} ₽</h2>
+            <small class="opacity-75">Все поступления</small>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card bg-gradient-danger h-100">
+            <h6 class="opacity-75 mb-2">📉 Расходы</h6>
+            <h2 class="fw-bold mb-0">{{ expense }} ₽</h2>
+            <small class="opacity-75">Траты + кредиты + подписки</small>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card bg-gradient-primary h-100">
+            <h6 class="opacity-75 mb-2">💵 Баланс</h6>
+            <h2 class="fw-bold mb-0">{{ balance }} ₽</h2>
+            <small class="opacity-75">Доходы - Расходы</small>
+        </div>
+    </div>
+</div>
+
+<!-- Дополнительные показатели -->
+<div class="row g-3 mb-5">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+                <h6 class="text-muted mb-2">Ближайшие платежи</h6>
+                <h4 class="fw-bold text-danger mb-0">{{ upcoming_payments }} ₽</h4>
+                <small class="text-muted">В этом месяце</small>
+            </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="stat-card bg-gradient-info h-100">
-            <h6 class="opacity-75 mb-2">Подписки/мес</h6>
-            <h2 class="fw-bold mb-0">{{ total_subscriptions }} ₽</h2>
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+                <h6 class="text-muted mb-2">Подписки/мес</h6>
+                <h4 class="fw-bold text-info mb-0">{{ total_subscriptions }} ₽</h4>
+                <small class="text-muted">Ежемесячно</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+                <h6 class="text-muted mb-2">Мне должны</h6>
+                <h4 class="fw-bold text-warning mb-0">{{ total_debts_owed }} ₽</h4>
+                <small class="text-muted">Общий долг</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+                <h6 class="text-muted mb-2">Свободно</h6>
+                <h4 class="fw-bold text-success mb-0">{{ balance - upcoming_payments }} ₽</h4>
+                <small class="text-muted">После платежей</small>
+            </div>
         </div>
     </div>
 </div>
