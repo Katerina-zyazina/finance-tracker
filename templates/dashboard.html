@@ -158,7 +158,7 @@
         </div>
     </div>
 
-    <!-- Остальные вкладки (Вклады, Долги, Подписки) оставляем как были, они не менялись -->
+    <!-- ВКЛАДЫ -->
     <div class="tab-pane fade" id="tab-deposits">
          <div class="card p-4 mb-4">
             <form method="POST" class="row g-3">
@@ -197,6 +197,7 @@
         </div>
     </div>
 
+    <!-- ДОЛГИ МНЕ -->
     <div class="tab-pane fade" id="tab-debts">
         <div class="card p-4 mb-4">
             <form method="POST" class="row g-3">
@@ -225,6 +226,7 @@
         </div>
     </div>
 
+    <!-- ПОДПИСКИ -->
     <div class="tab-pane fade" id="tab-subs">
         <div class="card p-4 mb-4">
             <form method="POST" class="row g-3">
@@ -260,7 +262,7 @@
 
 </div>
 
-<!-- Модальное окно для транзакций (как было раньше) -->
+<!-- Модальное окно для транзакций -->
 <div class="modal fade" id="addTransactionModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
@@ -273,7 +275,7 @@
                     <div class="mb-3">
                         <label class="form-label small text-muted">Тип</label>
                         <select name="type" class="form-select form-select-lg">
-                            <option value="income"> Доход (+)</option>
+                            <option value="income">💰 Доход (+)</option>
                             <option value="expense">📤 Расход (-)</option>
                         </select>
                     </div>
