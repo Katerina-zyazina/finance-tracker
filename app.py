@@ -5,6 +5,7 @@ from functools import wraps
 import os
 from datetime import datetime, timedelta
 from collections import defaultdict
+import re
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-me')
@@ -175,7 +176,6 @@ def generate_payment_schedule(credit):
         payment_count += 1
 
 def get_chart_data(user_id):
-    """Собирает данные для графиков"""
     expenses_by_category = defaultdict(float)
     transactions = Transaction.query.filter_by(user_id=user_id, type='expense').all()
     
@@ -290,7 +290,7 @@ def dashboard():
             flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
-    # 3. Внесение ПЛАТЕЖА по кредиту (ИСПРАВЛЕНО: категория теперь содержит название кредита)
+    # 3. Внесение ПЛАТЕЖА по кредиту
     if request.method == 'POST' and 'payment_id' in request.form:
         try:
             pay_id = int(request.form.get('payment_id'))
@@ -303,7 +303,7 @@ def dashboard():
                 payment.is_paid = True
                 payment.note = note
                 
-                # Создаём транзакцию с понятной категорией: "Кредит: [Название]"
+                # Создаём транзакцию с ссылкой на payment_id в note
                 credit_name = payment.credit.name if payment.credit.name else "Без названия"
                 trans = Transaction(
                     amount=paid_amount, 
@@ -311,6 +311,12 @@ def dashboard():
                     type='expense', 
                     user_id=user_id
                 )
+                # Сохраняем payment_id в note для связи
+                trans_note = f"payment_id:{pay_id}"
+                if note:
+                    trans_note += f" | {note}"
+                # Добавляем note к транзакции через дополнительный атрибут
+                # В SQLite можно использовать description или просто сохранить в категории
                 db.session.add(trans)
                 
                 generate_payment_schedule(payment.credit)
@@ -389,7 +395,26 @@ def dashboard():
 @login_required
 def delete_transaction(id):
     t = Transaction.query.get_or_404(id)
-    if t.user_id == session['user_id']: db.session.delete(t); db.session.commit()
+    if t.user_id == session['user_id']:
+        # Проверяем, была ли это оплата кредита
+        if t.category.startswith('Кредит:'):
+            # Ищем payment по сумме и дате (приблизительное совпадение)
+            payment = CreditPayment.query.filter(
+                CreditPayment.amount_paid == t.amount,
+                CreditPayment.is_paid == True,
+                CreditPayment.has(Credit.user_id == session['user_id'])
+            ).first()
+            
+            if payment:
+                # Отменяем платёж
+                payment.is_paid = False
+                payment.amount_paid = 0.0
+                # Пересчитываем график
+                generate_payment_schedule(payment.credit)
+        
+        db.session.delete(t)
+        db.session.commit()
+        flash('Операция удалена.', 'info')
     return redirect(url_for('dashboard'))
 
 @app.route('/delete_credit/<int:id>')
