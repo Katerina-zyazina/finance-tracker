@@ -4,11 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Finance Tracker{% endblock %}</title>
-    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Google Fonts: Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     
     <style>
@@ -19,126 +16,28 @@
             --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
             --body-bg: #F3F4F6;
         }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--body-bg);
-            color: #1F2937;
-        }
-
-        /* Навигация */
-        .navbar {
-            background: #ffffff !important;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
-            padding: 1rem 0;
-        }
-        .navbar-brand {
-            font-weight: 700;
-            color: #4F46E5 !important;
-            font-size: 1.25rem;
-        }
-
-        /* Карточки */
-        .card {
-            border: none;
-            border-radius: 16px;
-            box-shadow: var(--card-shadow);
-            transition: transform 0.2s;
-            background: #ffffff;
-        }
-        .card:hover {
-            transform: translateY(-3px);
-        }
-
-        /* Статистика */
-        .stat-card {
-            color: white;
-            border-radius: 20px;
-            padding: 1.5rem;
-            position: relative;
-            overflow: hidden;
-        }
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0; right: 0; bottom: 0; left: 0;
-            background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
-        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--body-bg); color: #1F2937; }
+        .navbar { background: #ffffff !important; box-shadow: 0 2px 15px rgba(0,0,0,0.05); padding: 1rem 0; }
+        .navbar-brand { font-weight: 700; color: #4F46E5 !important; font-size: 1.25rem; }
+        .card { border: none; border-radius: 16px; box-shadow: var(--card-shadow); background: #ffffff; }
+        .stat-card { color: white; border-radius: 20px; padding: 1.5rem; position: relative; overflow: hidden; }
         .bg-gradient-primary { background: var(--primary-gradient); }
         .bg-gradient-success { background: var(--success-gradient); }
         .bg-gradient-danger { background: var(--danger-gradient); }
-        .bg-gradient-warning { background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); }
-        .bg-gradient-info { background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); }
-
-        /* Формы */
-        .form-control, .form-select {
-            border-radius: 10px;
-            border: 1px solid #E5E7EB;
-            padding: 0.6rem 1rem;
-            background-color: #F9FAFB;
-        }
-        .form-control:focus, .form-select:focus {
-            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
-            border-color: #4F46E5;
-            background-color: #fff;
-        }
-
-        /* Кнопки */
-        .btn-primary {
-            background: var(--primary-gradient);
-            border: none;
-            border-radius: 10px;
-            padding: 0.6rem 1.2rem;
-            font-weight: 500;
-        }
-        .btn-primary:hover { opacity: 0.9; }
-
-        /* Вкладки */
+        .form-control, .form-select { border-radius: 10px; border: 1px solid #E5E7EB; padding: 0.6rem 1rem; background-color: #F9FAFB; }
+        .form-control:focus, .form-select:focus { box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1); border-color: #4F46E5; background-color: #fff; }
+        .btn-primary { background: var(--primary-gradient); border: none; border-radius: 10px; padding: 0.6rem 1.2rem; font-weight: 500; }
         .nav-tabs { border-bottom: none; gap: 10px; margin-bottom: 20px; }
-        .nav-link {
-            border: none;
-            border-radius: 12px;
-            color: #6B7280;
-            font-weight: 500;
-            background: white;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-        }
-        .nav-link.active {
-            color: #4F46E5;
-            background: #EEF2FF;
-            box-shadow: none;
-        }
-
-        /* Таблицы */
-        .table thead th {
-            border-bottom: 2px solid #F3F4F6;
-            color: #9CA3AF;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-weight: 600;
-        }
+        .nav-link { border: none; border-radius: 12px; color: #6B7280; font-weight: 500; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .nav-link.active { color: #4F46E5; background: #EEF2FF; box-shadow: none; }
+        .table thead th { border-bottom: 2px solid #F3F4F6; color: #9CA3AF; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
         .table td { vertical-align: middle; }
-        
-        /* Бейджи */
-        .badge {
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-weight: 500;
-        }
-
-        .floating-alert {
-            position: fixed;
-            top: 80px;
-            right: 20px;
-            z-index: 1050;
-            min-width: 300px;
-        }
+        .badge { padding: 6px 12px; border-radius: 8px; font-weight: 500; }
+        .floating-alert { position: fixed; top: 80px; right: 20px; z-index: 1050; min-width: 300px; }
     </style>
 </head>
 <body>
 
-    <!-- Навигация -->
     <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container">
             <a class="navbar-brand" href="/"><i class="bi bi-wallet2 me-2"></i>Finance Tracker</a>
@@ -153,7 +52,6 @@
         </div>
     </nav>
 
-    <!-- Алерты -->
     <div class="container floating-alert">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -172,5 +70,19 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        // Автоматическое скрытие уведомлений через 4 секунды
+        document.addEventListener('DOMContentLoaded', function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                setTimeout(function() {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }, 4000);
+            });
+        });
+    </script>
 </body>
 </html>
