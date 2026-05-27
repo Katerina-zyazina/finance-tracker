@@ -17,7 +17,7 @@
 <div class="row g-4 mb-5">
     <div class="col-md-4">
         <div class="stat-card bg-gradient-success h-100">
-            <h6 class="opacity-75 mb-2"> Доходы</h6>
+            <h6 class="opacity-75 mb-2">💰 Доходы</h6>
             <h2 class="fw-bold mb-0">{{ income }} ₽</h2>
             <small class="opacity-75">Все поступления</small>
         </div>
@@ -78,45 +78,32 @@
     </div>
 </div>
 
-<!-- ГРАФИКИ И ДИАГРАММЫ -->
+<!-- ГРАФИКИ -->
 <div class="row g-4 mb-5">
     <div class="col-md-6">
         <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-white border-0 pt-4 px-4">
-                <h5 class="fw-bold mb-0">📊 Расходы по категориям</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="categoryChart" height="250"></canvas>
-            </div>
+            <div class="card-header bg-white border-0 pt-4 px-4"><h5 class="fw-bold mb-0">📊 Расходы по категориям</h5></div>
+            <div class="card-body"><canvas id="categoryChart" height="250"></canvas></div>
         </div>
     </div>
-    
     <div class="col-md-6">
         <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-white border-0 pt-4 px-4">
-                <h5 class="fw-bold mb-0">📈 Доходы vs Расходы</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="incomeExpenseChart" height="250"></canvas>
-            </div>
+            <div class="card-header bg-white border-0 pt-4 px-4"><h5 class="fw-bold mb-0">📈 Доходы vs Расходы</h5></div>
+            <div class="card-body"><canvas id="incomeExpenseChart" height="250"></canvas></div>
         </div>
     </div>
 </div>
 
 <div class="card border-0 shadow-sm mb-5">
-    <div class="card-header bg-white border-0 pt-4 px-4">
-        <h5 class="fw-bold mb-0">💹 Динамика баланса</h5>
-    </div>
-    <div class="card-body">
-        <canvas id="balanceChart" height="100"></canvas>
-    </div>
+    <div class="card-header bg-white border-0 pt-4 px-4"><h5 class="fw-bold mb-0"> Динамика баланса</h5></div>
+    <div class="card-body"><canvas id="balanceChart" height="100"></canvas></div>
 </div>
 
-<!-- Вкладки инструментов -->
+<!-- Вкладки -->
 <ul class="nav nav-pills mb-4 p-1 bg-white rounded-3 shadow-sm d-inline-flex" id="toolsTab" role="tablist">
-    <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-credits"> 💳 Кредиты</button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-deposits"> Вклады</button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-debts">🤝 Долги мне</button></li>
+    <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-credits">💳 Кредиты</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-deposits">🏦 Вклады</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-debts"> Долги мне</button></li>
     <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-subs">📺 Подписки</button></li>
 </ul>
 
@@ -128,79 +115,17 @@
         <div class="card p-4 mb-4 border-start border-4 border-primary">
             <h5 class="fw-bold mb-3">Новый кредит / Рассрочка</h5>
             <form method="POST" class="row g-3">
-                <div class="col-md-3">
-                    <label class="form-label small text-muted">Название</label>
-                    <input type="text" name="credit_name" class="form-control" placeholder="Напр. iPhone 15" required>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label small text-muted">Сумма кредита</label>
-                    <input type="number" step="0.01" name="total_amount" class="form-control" placeholder="0.00" required>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label small text-muted">Ставка (% год)</label>
-                    <input type="number" step="0.1" name="interest_rate" class="form-control" placeholder="0" value="0">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label small text-muted">Платеж</label>
-                    <input type="number" step="0.01" name="monthly_payment_fixed" class="form-control" placeholder="0.00" required>
-                </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary w-100 py-2" style="min-width: 150px;">Создать кредит</button>
-                </div>
-                
-                <!-- Дополнительные настройки -->
-                <div class="col-12">
-                    <hr class="my-3">
-                    <h6 class="fw-bold mb-3">📅 Настройки графика платежей</h6>
-                </div>
-                
-                <div class="col-md-3">
-                    <label class="form-label small text-muted">Частота платежей</label>
-                    <select name="payment_frequency" class="form-select" id="frequencySelect" onchange="togglePaymentDay()">
-                        <option value="monthly">Ежемесячно</option>
-                        <option value="biweekly">Каждые 2 недели</option>
-                    </select>
-                </div>
-                
-                <div class="col-md-2" id="paymentDayBlock">
-                    <label class="form-label small text-muted">День месяца</label>
-                    <select name="payment_day" class="form-select" id="paymentDaySelect">
-                        {% for day in range(1, 29) %}
-                        <option value="{{ day }}">{{ day }} число</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="col-md-2" id="weekdayBlock" style="display:none;">
-                    <label class="form-label small text-muted">День недели</label>
-                    <select name="payment_day" class="form-select">
-                        <option value="0">Понедельник</option>
-                        <option value="1">Вторник</option>
-                        <option value="2">Среда</option>
-                        <option value="3">Четверг</option>
-                        <option value="4">Пятница</option>
-                    </select>
-                </div>
-                
-                <div class="col-md-2">
-                    <label class="form-label small text-muted">Месяц начала</label>
-                    <select name="start_month" class="form-select">
-                        {% for month in range(1, 13) %}
-                        <option value="{{ month }}" {% if month == now.month %}selected{% endif %}>
-                            {{ ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'][month-1] }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="col-md-2">
-                    <label class="form-label small text-muted">Год начала</label>
-                    <select name="start_year" class="form-select">
-                        {% for year in range(now.year, now.year + 3) %}
-                        <option value="{{ year }}" {% if year == now.year %}selected{% endif %}>{{ year }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
+                <div class="col-md-3"><input type="text" name="credit_name" class="form-control" placeholder="Название" required></div>
+                <div class="col-md-2"><input type="number" step="0.01" name="total_amount" class="form-control" placeholder="Сумма" required></div>
+                <div class="col-md-2"><input type="number" step="0.1" name="interest_rate" class="form-control" placeholder="% Годовых" value="0"></div>
+                <div class="col-md-2"><input type="number" step="0.01" name="monthly_payment_fixed" class="form-control" placeholder="Платеж" required></div>
+                <div class="col-md-2 d-flex align-items-end"><button type="submit" class="btn btn-primary w-100 py-2" style="min-width: 150px;">Создать кредит</button></div>
+                <div class="col-12"><hr class="my-3"><h6 class="fw-bold mb-3">📅 Настройки графика</h6></div>
+                <div class="col-md-3"><select name="payment_frequency" class="form-select" id="frequencySelect" onchange="togglePaymentDay()"><option value="monthly">Ежемесячно</option><option value="biweekly">Каждые 2 недели</option></select></div>
+                <div class="col-md-2" id="paymentDayBlock"><select name="payment_day" class="form-select">{% for day in range(1, 29) %}<option value="{{ day }}">{{ day }}</option>{% endfor %}</select></div>
+                <div class="col-md-2" id="weekdayBlock" style="display:none;"><select name="payment_day" class="form-select"><option value="0">Пн</option><option value="1">Вт</option><option value="2">Ср</option><option value="3">Чт</option><option value="4">Пт</option></select></div>
+                <div class="col-md-2"><select name="start_month" class="form-select">{% for m in range(1, 13) %}<option value="{{ m }}" {% if m==now.month %}selected{% endif %}>{{ ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'][m-1] }}</option>{% endfor %}</select></div>
+                <div class="col-md-2"><select name="start_year" class="form-select">{% for y in range(now.year, now.year+3) %}<option value="{{ y }}" {% if y==now.year %}selected{% endif %}>{{ y }}</option>{% endfor %}</select></div>
             </form>
         </div>
 
@@ -210,64 +135,82 @@
             <div class="accordion-item mb-3 border-0 shadow-sm rounded-3 overflow-hidden">
                 <h2 class="accordion-header">
                     <button class="accordion-button fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ c.id }}">
-                        <span class="me-2">{% if c.interest_rate > 0 %}🏦{% else %}📦{% endif %}</span> 
+                        <span class="me-2">{% if c.interest_rate > 0 %}🏦{% else %}{% endif %}</span> 
                         {{ c.name }} 
-                        <span class="ms-auto text-muted small fw-normal">Остаток: {{ c.remaining_debt }} ₽</span>
+                        <span class="ms-auto text-muted small">Остаток: {{ c.remaining_debt }} ₽</span>
                     </button>
                 </h2>
                 <div id="collapse{{ c.id }}" class="accordion-collapse collapse show" data-bs-parent="#accordionCredits">
                     <div class="accordion-body bg-light">
+                        <!-- Инфо о кредите -->
                         <div class="row mb-3">
-                            <div class="col-md-4">
-                                <small class="text-muted d-block">Взято</small>
-                                <span class="fw-bold">{{ c.total_amount }} ₽</span>
+                            <div class="col-md-3"><small class="text-muted d-block">Взято</small><span class="fw-bold">{{ c.total_amount }} ₽</span></div>
+                            <div class="col-md-3"><small class="text-muted d-block">Ставка</small><span class="fw-bold">{{ c.interest_rate }}%</span></div>
+                            <div class="col-md-3"><small class="text-muted d-block">Досрочно внесено</small><span class="fw-bold text-success">{{ c.total_extra_paid }} ₽</span></div>
+                            <div class="col-md-3 text-end"><a href="{{ url_for('delete_credit', id=c.id) }}" class="btn btn-sm btn-outline-danger">Удалить</a></div>
+                        </div>
+
+                        <!-- ФОРМА ДОСРОЧНОГО ПЛАТЕЖА -->
+                        <div class="card border-0 shadow-sm mb-3">
+                            <div class="card-header bg-white border-0">
+                                <h6 class="fw-bold mb-0 text-success">💸 Внести досрочный платёж (вне графика)</h6>
                             </div>
-                            <div class="col-md-4">
-                                <small class="text-muted d-block">Ставка</small>
-                                <span class="fw-bold">{{ c.interest_rate }}%</span>
-                            </div>
-                            <div class="col-md-4 text-end">
-                                <a href="{{ url_for('delete_credit', id=c.id) }}" class="btn btn-sm btn-outline-danger">Удалить кредит</a>
+                            <div class="card-body">
+                                <form method="POST" class="row g-2">
+                                    <input type="hidden" name="extra_credit_id" value="{{ c.id }}">
+                                    <div class="col-md-4">
+                                        <input type="number" step="0.01" name="extra_amount" class="form-control" 
+                                               placeholder="Сумма досрочного платежа" 
+                                               max="{{ c.remaining_debt }}" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <input type="text" name="extra_note" class="form-control" placeholder="Комментарий (необязательно)">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button type="submit" class="btn btn-success w-100">Внести</button>
+                                    </div>
+                                </form>
+                                <small class="text-muted mt-1 d-block">* Досрочный платёж уменьшит остаток долга и пересчитает график. Максимум: {{ c.remaining_debt }} ₽</small>
                             </div>
                         </div>
 
-                        <!-- Таблица платежей -->
+                        <!-- История досрочных платежей -->
+                        {% if c.extra_payments %}
+                        <div class="mb-3">
+                            <h6 class="fw-bold text-success">📋 История досрочных платежей</h6>
+                            <div class="list-group">
+                                {% for ep in c.extra_payments %}
+                                <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-2">
+                                    <div>
+                                        <span class="fw-bold text-success">+{{ ep.amount }} ₽</span>
+                                        <small class="text-muted d-block">{{ ep.date.strftime('%d.%m.%Y') }} {% if ep.note %}• {{ ep.note }}{% endif %}</small>
+                                    </div>
+                                    <a href="{{ url_for('delete_extra_payment', id=ep.id) }}" class="btn btn-sm btn-outline-danger">✕</a>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- График платежей -->
                         <div class="table-responsive bg-white rounded-3 p-2">
                             <table class="table table-sm table-hover mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Дата платежа</th>
-                                        <th>Сумма</th>
-                                        <th>Статус</th>
-                                        <th>Внести платеж</th>
-                                    </tr>
-                                </thead>
+                                <thead class="table-light"><tr><th>Дата платежа</th><th>Сумма</th><th>Статус</th><th>Внести</th></tr></thead>
                                 <tbody>
                                     {% for p in c.payments %}
                                     <tr class="{% if p.is_paid %}table-success opacity-50{% elif p.due_date < now %}table-danger{% endif %}">
                                         <td>{{ p.due_date.strftime('%d.%m.%Y') }}</td>
                                         <td class="fw-bold">{{ p.amount_due }} ₽</td>
-                                        <td>
-                                            {% if p.is_paid %}
-                                                <span class="badge bg-success text-white">Оплачено</span>
-                                                {% if p.note %}<small class="d-block text-muted">{{ p.note }}</small>{% endif %}
-                                            {% else %}
-                                                <span class="badge bg-secondary text-white">Ожидается</span>
-                                            {% endif %}
-                                        </td>
+                                        <td>{% if p.is_paid %}<span class="badge bg-success">Оплачено</span>{% else %}<span class="badge bg-secondary">Ожидается</span>{% endif %}</td>
                                         <td>
                                             {% if not p.is_paid %}
                                             <form method="POST" class="d-flex gap-2">
                                                 <input type="hidden" name="payment_id" value="{{ p.id }}">
-                                                <!-- ЗАЩИТА ОТ ПЕРЕПЛАТЫ: max="{{ c.remaining_debt }}" -->
-                                                <input type="number" step="0.01" name="paid_amount" class="form-control form-control-sm" style="width: 100px;" 
-                                                       value="{{ p.amount_due }}" max="{{ c.remaining_debt }}" required>
+                                                <input type="number" step="0.01" name="paid_amount" class="form-control form-control-sm" style="width: 100px;" value="{{ p.amount_due }}" max="{{ c.remaining_debt }}" required>
                                                 <input type="text" name="note" class="form-control form-control-sm" placeholder="Коммент">
                                                 <button type="submit" class="btn btn-sm btn-success">OK</button>
                                             </form>
-                                            {% else %}
-                                                <span class="text-success small"><i class="bi bi-check-circle-fill"></i> {{ p.amount_paid }} ₽</span>
-                                            {% endif %}
+                                            {% else %}<span class="text-success small">{{ p.amount_paid }} ₽</span>{% endif %}
                                         </td>
                                     </tr>
                                     {% endfor %}
@@ -277,168 +220,87 @@
                     </div>
                 </div>
             </div>
-            {% else %}
-            <div class="text-center py-5 text-muted bg-white rounded-3 shadow-sm">Нет активных кредитов</div>
-            {% endfor %}
+            {% else %}<div class="text-center py-5 text-muted bg-white rounded-3 shadow-sm">Нет кредитов</div>{% endfor %}
         </div>
     </div>
 
     <!-- ВКЛАДЫ -->
     <div class="tab-pane fade" id="tab-deposits">
-         <div class="card p-4 mb-4">
-            <form method="POST" class="row g-3">
-                <div class="col-md-3"><input type="text" name="bank_name" class="form-control" placeholder="Банк"></div>
-                <div class="col-md-3"><input type="text" name="description" class="form-control" placeholder="Название вклада"></div>
-                <div class="col-md-2"><input type="number" name="amount" class="form-control" placeholder="Сумма"></div>
-                <div class="col-md-2"><input type="number" step="0.1" name="interest_rate" class="form-control" placeholder="% Годовых"></div>
-                <div class="col-md-1"><input type="number" name="term_months" class="form-control" placeholder="Мес."></div>
-                <div class="col-md-1"><button type="submit" class="btn btn-success w-100"><i class="bi bi-plus"></i></button></div>
-            </form>
-        </div>
+        <div class="card p-4 mb-4"><form method="POST" class="row g-3">
+            <div class="col-md-3"><input type="text" name="bank_name" class="form-control" placeholder="Банк"></div>
+            <div class="col-md-3"><input type="text" name="description" class="form-control" placeholder="Название"></div>
+            <div class="col-md-2"><input type="number" name="amount" class="form-control" placeholder="Сумма"></div>
+            <div class="col-md-2"><input type="number" step="0.1" name="interest_rate" class="form-control" placeholder="%"></div>
+            <div class="col-md-1"><input type="number" name="term_months" class="form-control" placeholder="Мес."></div>
+            <div class="col-md-1"><button type="submit" class="btn btn-success w-100">+</button></div>
+        </form></div>
         <div class="row g-3">
             {% for d in deposits %}
-            <div class="col-md-6">
-                <div class="card p-4 border-start border-4 border-success h-100">
-                    <div class="d-flex justify-content-between">
-                        <h5 class="fw-bold mb-0">{{ d.bank_name }}</h5>
-                        <a href="{{ url_for('delete_deposit', id=d.id) }}" class="text-muted"><i class="bi bi-x-lg"></i></a>
-                    </div>
-                    <p class="text-muted mb-3">{{ d.description }}</p>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <small class="text-muted">Вложено</small>
-                            <div class="fs-5 fw-bold">{{ d.amount }} ₽</div>
-                        </div>
-                        <div class="text-end">
-                            <small class="text-muted">Итого через {{ d.term_months }} мес.</small>
-                            <div class="fs-5 fw-bold text-success">{{ d.total_amount_end }} ₽</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% else %}
-            <div class="col-12 text-center py-4 text-muted bg-white rounded-3 shadow-sm">Вкладов пока нет</div>
-            {% endfor %}
+            <div class="col-md-6"><div class="card p-4 border-start border-4 border-success h-100"><div class="d-flex justify-content-between"><h5 class="fw-bold mb-0">{{ d.bank_name }}</h5><a href="{{ url_for('delete_deposit', id=d.id) }}" class="text-muted">✕</a></div><p class="text-muted mb-3">{{ d.description }}</p><div class="d-flex justify-content-between"><div><small class="text-muted">Вложено</small><div class="fs-5 fw-bold">{{ d.amount }} ₽</div></div><div class="text-end"><small class="text-muted">Итого</small><div class="fs-5 fw-bold text-success">{{ d.total_amount_end }} ₽</div></div></div></div></div>
+            {% else %}<div class="col-12 text-center text-muted">Нет вкладов</div>{% endfor %}
         </div>
     </div>
 
     <!-- ДОЛГИ МНЕ -->
     <div class="tab-pane fade" id="tab-debts">
-        <div class="card p-4 mb-4">
-            <form method="POST" class="row g-3">
-                <div class="col-md-3"><input type="text" name="debtor_name" class="form-control" placeholder="Кто должен?"></div>
-                <div class="col-md-3"><input type="number" name="amount" class="form-control" placeholder="Сумма"></div>
-                <div class="col-md-5"><input type="text" name="description" class="form-control" placeholder="Комментарий"></div>
-                <div class="col-md-1"><button type="submit" class="btn btn-warning text-white w-100"><i class="bi bi-plus"></i></button></div>
-            </form>
-        </div>
+        <div class="card p-4 mb-4"><form method="POST" class="row g-3">
+            <div class="col-md-3"><input type="text" name="debtor_name" class="form-control" placeholder="Кто?"></div>
+            <div class="col-md-3"><input type="number" name="amount" class="form-control" placeholder="Сумма"></div>
+            <div class="col-md-5"><input type="text" name="description" class="form-control" placeholder="Коммент"></div>
+            <div class="col-md-1"><button type="submit" class="btn btn-warning text-white w-100">+</button></div>
+        </form></div>
         <div class="list-group">
             {% for debt in debts %}
-            <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3 border-0 shadow-sm mb-2 rounded-3">
-                <div>
-                    <h6 class="fw-bold mb-1">{{ debt.debtor_name }}</h6>
-                    <small class="text-muted">{{ debt.description }}</small>
-                </div>
-                <div class="text-end">
-                    <span class="fw-bold text-warning fs-5">{{ debt.amount }} ₽</span>
-                    <br>
-                    <a href="{{ url_for('delete_debt', id=debt.id) }}" class="btn btn-sm btn-outline-success mt-1">Вернул</a>
-                </div>
+            <div class="list-group-item d-flex justify-content-between align-items-center p-3 border-0 shadow-sm mb-2 rounded-3">
+                <div><h6 class="fw-bold mb-1">{{ debt.debtor_name }}</h6><small class="text-muted">{{ debt.description }}</small></div>
+                <div class="text-end"><span class="fw-bold text-warning fs-5">{{ debt.amount }} ₽</span><br><a href="{{ url_for('delete_debt', id=debt.id) }}" class="btn btn-sm btn-outline-success mt-1">Вернул</a></div>
             </div>
-            {% else %}
-            <div class="text-center py-4 text-muted bg-white rounded-3 shadow-sm">Никто не должен</div>
-            {% endfor %}
+            {% else %}<div class="text-center py-4 text-muted">Никто не должен</div>{% endfor %}
         </div>
     </div>
 
     <!-- ПОДПИСКИ -->
     <div class="tab-pane fade" id="tab-subs">
-        <div class="card p-4 mb-4">
-            <form method="POST" class="row g-3">
-                <div class="col-md-3"><input type="text" name="service_name" class="form-control" placeholder="Сервис (Netflix)"></div>
-                <div class="col-md-3"><input type="text" name="plan_name" class="form-control" placeholder="Тариф"></div>
-                <div class="col-md-2"><input type="number" name="cost" class="form-control" placeholder="Цена"></div>
-                <div class="col-md-3">
-                    <select name="billing_cycle" class="form-select">
-                        <option value="monthly">Ежемесячно</option>
-                        <option value="yearly">Ежегодно</option>
-                    </select>
-                </div>
-                <div class="col-md-1"><button type="submit" class="btn btn-info text-white w-100"><i class="bi bi-plus"></i></button></div>
-            </form>
-        </div>
+        <div class="card p-4 mb-4"><form method="POST" class="row g-3">
+            <div class="col-md-3"><input type="text" name="service_name" class="form-control" placeholder="Сервис"></div>
+            <div class="col-md-3"><input type="text" name="plan_name" class="form-control" placeholder="Тариф"></div>
+            <div class="col-md-2"><input type="number" name="cost" class="form-control" placeholder="Цена"></div>
+            <div class="col-md-3"><select name="billing_cycle" class="form-select"><option value="monthly">Мес.</option><option value="yearly">Год</option></select></div>
+            <div class="col-md-1"><button type="submit" class="btn btn-info text-white w-100">+</button></div>
+        </form></div>
         <table class="table bg-white rounded-3 shadow-sm">
             <thead><tr><th>Сервис</th><th>Тариф</th><th>Период</th><th>Цена</th><th></th></tr></thead>
             <tbody>
-                {% for s in subscriptions %}
-                <tr>
-                    <td class="fw-bold">{{ s.service_name }}</td>
-                    <td>{{ s.plan_name }}</td>
-                    <td><span class="badge bg-light text-dark">{{ 'В месяц' if s.billing_cycle=='monthly' else 'В год' }}</span></td>
-                    <td class="fw-bold text-info">{{ s.cost }} ₽</td>
-                    <td><a href="{{ url_for('delete_subscription', id=s.id) }}" class="btn btn-sm btn-outline-danger">✕</a></td>
-                </tr>
-                {% else %}
-                <tr><td colspan="5" class="text-center text-muted">Нет подписок</td></tr>
-                {% endfor %}
+                {% for s in subscriptions %}<tr><td class="fw-bold">{{ s.service_name }}</td><td>{{ s.plan_name }}</td><td><span class="badge bg-light">{{ 'Мес.' if s.billing_cycle=='monthly' else 'Год' }}</span></td><td class="fw-bold">{{ s.cost }} ₽</td><td><a href="{{ url_for('delete_subscription', id=s.id) }}" class="btn btn-sm btn-outline-danger">✕</a></td></tr>{% else %}<tr><td colspan="5" class="text-center text-muted">Нет подписок</td></tr>{% endfor %}
             </tbody>
         </table>
     </div>
 
 </div>
 
-<!-- Модальное окно для транзакций -->
+<!-- Модалка операций -->
 <div class="modal fade" id="addTransactionModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header border-0">
-                <h5 class="modal-title fw-bold">Новая операция</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form method="POST">
-                    <div class="mb-3">
-                        <label class="form-label small text-muted">Тип</label>
-                        <select name="type" class="form-select form-select-lg">
-                            <option value="income">💰 Доход (+)</option>
-                            <option value="expense">📤 Расход (-)</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small text-muted">Сумма</label>
-                        <input type="number" name="amount" class="form-control form-control-lg" placeholder="0.00">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small text-muted">Категория</label>
-                        <input type="text" name="category" class="form-control form-control-lg" placeholder="Напр. Зарплата">
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100 py-2">Сохранить</button>
-                </form>
-            </div>
-        </div>
-    </div>
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow">
+        <div class="modal-header border-0"><h5 class="modal-title fw-bold">Новая операция</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body"><form method="POST">
+            <div class="mb-3"><select name="type" class="form-select form-select-lg"><option value="income">💰 Доход (+)</option><option value="expense">📤 Расход (-)</option></select></div>
+            <div class="mb-3"><input type="number" name="amount" class="form-control form-control-lg" placeholder="0.00"></div>
+            <div class="mb-3"><input type="text" name="category" class="form-control form-control-lg" placeholder="Категория"></div>
+            <button type="submit" class="btn btn-primary w-100 py-2">Сохранить</button>
+        </form></div>
+    </div></div>
 </div>
 
-<!-- История операций -->
+<!-- История -->
 <div class="mt-5">
     <h4 class="fw-bold mb-3">История операций</h4>
     <div class="card p-0 overflow-hidden">
         <table class="table table-hover mb-0">
-            <thead class="bg-light">
-                <tr><th class="ps-4">Дата</th><th>Категория</th><th>Тип</th><th>Сумма</th><th></th></tr>
-            </thead>
+            <thead class="bg-light"><tr><th class="ps-4">Дата</th><th>Категория</th><th>Тип</th><th>Сумма</th><th></th></tr></thead>
             <tbody>
                 {% for t in transactions %}
-                <tr>
-                    <td class="ps-4 text-muted">{{ t.date.strftime('%d.%m') }}</td>
-                    <td class="fw-bold">{{ t.category }}</td>
-                    <td><span class="badge {{ 'bg-success-subtle text-success' if t.type=='income' else 'bg-danger-subtle text-danger' }}">{{ 'Доход' if t.type=='income' else 'Расход' }}</span></td>
-                    <td class="fw-bold {{ 'text-success' if t.type=='income' else 'text-danger' }}">{{ '+' if t.type=='income' else '-' }}{{ t.amount }} ₽</td>
-                    <td><a href="{{ url_for('delete_transaction', id=t.id) }}" class="text-muted"><i class="bi bi-trash"></i></a></td>
-                </tr>
-                {% else %}
-                <tr><td colspan="5" class="text-center py-4 text-muted">Операций пока нет</td></tr>
-                {% endfor %}
+                <tr><td class="ps-4 text-muted">{{ t.date.strftime('%d.%m') }}</td><td class="fw-bold">{{ t.category }}</td><td><span class="badge {{ 'bg-success-subtle text-success' if t.type=='income' else 'bg-danger-subtle text-danger' }}">{{ 'Доход' if t.type=='income' else 'Расход' }}</span></td><td class="fw-bold {{ 'text-success' if t.type=='income' else 'text-danger' }}">{{ '+' if t.type=='income' else '-' }}{{ t.amount }} ₽</td><td><a href="{{ url_for('delete_transaction', id=t.id) }}" class="text-muted">🗑</a></td></tr>
+                {% else %}<tr><td colspan="5" class="text-center py-4 text-muted">Нет операций</td></tr>{% endfor %}
             </tbody>
         </table>
     </div>
@@ -456,47 +318,23 @@ document.addEventListener('DOMContentLoaded', function() {
     const chartData = {{ chart_data | tojson }};
     const colors = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#8B5CF6', '#EC4899', '#14B8A6'];
 
-    // 1. Категории
     const ctxCat = document.getElementById('categoryChart');
     if (chartData.categories.length > 0 && ctxCat) {
-        new Chart(ctxCat, {
-            type: 'doughnut',
-            data: { labels: chartData.categories, datasets: [{ data: chartData.category_amounts, backgroundColor: colors, borderWidth: 0 }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-        });
+        new Chart(ctxCat, { type: 'doughnut', data: { labels: chartData.categories, datasets: [{ data: chartData.category_amounts, backgroundColor: colors, borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } } });
     } else if (ctxCat) {
-        ctxCat.parentElement.innerHTML = '<div class="d-flex align-items-center justify-content-center h-100 text-muted">Добавьте расходы, чтобы увидеть диаграмму</div>';
+        ctxCat.parentElement.innerHTML = '<div class="d-flex align-items-center justify-content-center h-100 text-muted">Добавьте расходы</div>';
     }
 
-    // 2. Доходы/Расходы
     const ctxBar = document.getElementById('incomeExpenseChart');
     if (ctxBar) {
-        new Chart(ctxBar, {
-            type: 'bar',
-            data: {
-                labels: chartData.months_data.map(d => d.month),
-                datasets: [
-                    { label: 'Доходы', data: chartData.months_data.map(d => d.income), backgroundColor: '#10B981', borderRadius: 5 },
-                    { label: 'Расходы', data: chartData.months_data.map(d => d.expense), backgroundColor: '#EF4444', borderRadius: 5 }
-                ]
-            },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-        });
+        new Chart(ctxBar, { type: 'bar', data: { labels: chartData.months_data.map(d => d.month), datasets: [{ label: 'Доходы', data: chartData.months_data.map(d => d.income), backgroundColor: '#10B981', borderRadius: 5 }, { label: 'Расходы', data: chartData.months_data.map(d => d.expense), backgroundColor: '#EF4444', borderRadius: 5 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } } });
     }
 
-    // 3. Баланс
     const ctxLine = document.getElementById('balanceChart');
     if (ctxLine) {
         let bal = [], run = 0;
         chartData.months_data.forEach(m => { run += m.income - m.expense; bal.push(run); });
-        new Chart(ctxLine, {
-            type: 'line',
-            data: {
-                labels: chartData.months_data.map(d => d.month),
-                datasets: [{ label: 'Баланс', data: bal, borderColor: '#4F46E5', backgroundColor: 'rgba(79, 70, 229, 0.1)', fill: true, tension: 0.4, pointRadius: 4 }]
-            },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-        });
+        new Chart(ctxLine, { type: 'line', data: { labels: chartData.months_data.map(d => d.month), datasets: [{ label: 'Баланс', data: bal, borderColor: '#4F46E5', backgroundColor: 'rgba(79, 70, 229, 0.1)', fill: true, tension: 0.4, pointRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
     }
 });
 </script>

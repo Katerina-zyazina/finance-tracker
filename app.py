@@ -37,7 +37,7 @@ class Transaction(db.Model):
     type = db.Column(db.String(10), nullable=False)
     date = db.Column(db.DateTime, default=db.func.current_timestamp())
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    payment_ref_id = db.Column(db.Integer, nullable=True)  # Связь с CreditPayment
+    payment_ref_id = db.Column(db.Integer, nullable=True)
 
 class Credit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -54,6 +54,7 @@ class Credit(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     
     payments = db.relationship('CreditPayment', backref='credit', lazy=True, order_by="CreditPayment.due_date.asc()")
+    extra_payments = db.relationship('ExtraCreditPayment', backref='credit', lazy=True, order_by="ExtraCreditPayment.date.desc()")
 
     @property
     def total_with_interest(self):
@@ -66,8 +67,12 @@ class Credit(db.Model):
         return sum(p.amount_paid for p in self.payments if p.is_paid)
 
     @property
+    def total_extra_paid(self):
+        return sum(p.amount for p in self.extra_payments)
+
+    @property
     def remaining_debt(self):
-        return max(0, self.total_with_interest - self.total_paid)
+        return max(0, self.total_with_interest - self.total_paid - self.total_extra_paid)
 
 class CreditPayment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -76,6 +81,14 @@ class CreditPayment(db.Model):
     amount_due = db.Column(db.Float, nullable=False)
     amount_paid = db.Column(db.Float, default=0.0)
     is_paid = db.Column(db.Boolean, default=False)
+    note = db.Column(db.String(200))
+
+class ExtraCreditPayment(db.Model):
+    """Досрочные платежи вне графика"""
+    id = db.Column(db.Integer, primary_key=True)
+    credit_id = db.Column(db.Integer, db.ForeignKey('credit.id'), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    date = db.Column(db.DateTime, default=datetime.utcnow)
     note = db.Column(db.String(200))
 
 class Deposit(db.Model):
@@ -134,13 +147,14 @@ def add_weeks(source_date, weeks):
     return source_date + timedelta(weeks=weeks)
 
 def generate_payment_schedule(credit):
+    """Генерирует график с учётом досрочных платежей"""
     for p in credit.payments:
         if not p.is_paid:
             db.session.delete(p)
     db.session.flush()
     
     total_with_interest = credit.total_with_interest
-    remaining_balance = total_with_interest - credit.total_paid
+    remaining_balance = total_with_interest - credit.total_paid - credit.total_extra_paid
     
     if remaining_balance <= 0:
         return
@@ -254,7 +268,7 @@ def dashboard():
     user_id = session['user_id']
 
     # 1. Обычные транзакции
-    if request.method == 'POST' and 'amount' in request.form and 'credit_name' not in request.form and 'bank_name' not in request.form and 'debtor_name' not in request.form and 'service_name' not in request.form and 'payment_id' not in request.form and 'payment_day' not in request.form:
+    if request.method == 'POST' and 'amount' in request.form and 'credit_name' not in request.form and 'bank_name' not in request.form and 'debtor_name' not in request.form and 'service_name' not in request.form and 'payment_id' not in request.form and 'payment_day' not in request.form and 'extra_credit_id' not in request.form:
         try:
             amount, category, trans_type = float(request.form.get('amount')), request.form.get('category'), request.form.get('type')
             if amount <= 0: raise ValueError("Сумма > 0")
@@ -290,7 +304,7 @@ def dashboard():
             flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
-    # 3. Внесение платежа (С ЗАЩИТОЙ ОТ ПЕРЕПЛАТЫ)
+    # 3. Внесение платежа по графику
     if request.method == 'POST' and 'payment_id' in request.form:
         try:
             pay_id = int(request.form.get('payment_id'))
@@ -304,7 +318,6 @@ def dashboard():
                 flash('Ошибка доступа.', 'danger')
                 return redirect(url_for('dashboard'))
 
-            # ✅ ЗАЩИТА: Нельзя внести больше, чем осталось по долгу
             if paid_amount > credit.remaining_debt + 0.01:
                 flash(f'Нельзя внести {paid_amount} ₽. Остаток долга: {credit.remaining_debt} ₽', 'danger')
                 return redirect(url_for('dashboard'))
@@ -313,14 +326,13 @@ def dashboard():
             payment.is_paid = True
             payment.note = note
             
-            # Создаём транзакцию с прямой ссылкой на платёж
             credit_name = credit.name if credit.name else "Без названия"
             trans = Transaction(
                 amount=paid_amount, 
                 category=f"Кредит: {credit_name}", 
                 type='expense', 
                 user_id=user_id,
-                payment_ref_id=pay_id  #  Прямая связь
+                payment_ref_id=pay_id
             )
             db.session.add(trans)
             
@@ -332,7 +344,50 @@ def dashboard():
             flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
-    # 4. Вклады
+    # 4. ДОСРОЧНЫЙ ПЛАТЕЖ (вне графика)
+    if request.method == 'POST' and 'extra_credit_id' in request.form:
+        try:
+            credit_id = int(request.form.get('extra_credit_id'))
+            extra_amount = float(request.form.get('extra_amount'))
+            extra_note = request.form.get('extra_note', '')
+            
+            credit = Credit.query.get_or_404(credit_id)
+            if credit.user_id != user_id:
+                flash('Ошибка доступа.', 'danger')
+                return redirect(url_for('dashboard'))
+
+            if extra_amount > credit.remaining_debt + 0.01:
+                flash(f'Нельзя внести {extra_amount} ₽. Остаток долга: {credit.remaining_debt} ₽', 'danger')
+                return redirect(url_for('dashboard'))
+
+            # Создаём досрочный платёж
+            extra_payment = ExtraCreditPayment(
+                credit_id=credit.id,
+                amount=extra_amount,
+                note=extra_note
+            )
+            db.session.add(extra_payment)
+            
+            # Создаём транзакцию
+            credit_name = credit.name if credit.name else "Без названия"
+            trans = Transaction(
+                amount=extra_amount, 
+                category=f"Досрочно: {credit_name}", 
+                type='expense', 
+                user_id=user_id
+            )
+            db.session.add(trans)
+            
+            # Пересчитываем график
+            generate_payment_schedule(credit)
+            db.session.commit()
+            flash(f'Досрочный платёж {extra_amount} ₽ внесён! График пересчитан.', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash('Ошибка: ' + str(e), 'danger')
+        return redirect(url_for('dashboard'))
+
+    # 5. Вклады
     if request.method == 'POST' and 'bank_name' in request.form:
         try:
             bank, desc = request.form.get('bank_name'), request.form.get('description')
@@ -343,7 +398,7 @@ def dashboard():
         except Exception as e: flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
-    # 5. Долги
+    # 6. Долги
     if request.method == 'POST' and 'debtor_name' in request.form:
         try:
             debtor, amount, desc = request.form.get('debtor_name'), float(request.form.get('amount')), request.form.get('description')
@@ -353,7 +408,7 @@ def dashboard():
         except Exception as e: flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
-    # 6. Подписки
+    # 7. Подписки
     if request.method == 'POST' and 'service_name' in request.form:
         try:
             service, plan = request.form.get('service_name'), request.form.get('plan_name')
@@ -401,7 +456,6 @@ def dashboard():
 def delete_transaction(id):
     t = Transaction.query.get_or_404(id)
     if t.user_id == session['user_id']:
-        # ✅ Если это оплата кредита, отменяем платёж через прямую ссылку
         if t.payment_ref_id:
             payment = CreditPayment.query.get(t.payment_ref_id)
             if payment and payment.is_paid:
@@ -414,12 +468,28 @@ def delete_transaction(id):
         flash('Операция удалена.', 'info')
     return redirect(url_for('dashboard'))
 
+@app.route('/delete_extra/<int:id>')
+@login_required
+def delete_extra_payment(id):
+    """Удаление досрочного платежа"""
+    extra = ExtraCreditPayment.query.get_or_404(id)
+    credit = extra.credit
+    
+    if credit.user_id == session['user_id']:
+        db.session.delete(extra)
+        # Пересчитываем график (долг увеличивается)
+        generate_payment_schedule(credit)
+        db.session.commit()
+        flash('Досрочный платёж удалён. График восстановлен.', 'info')
+    return redirect(url_for('dashboard'))
+
 @app.route('/delete_credit/<int:id>')
 @login_required
 def delete_credit(id):
     c = Credit.query.get_or_404(id)
     if c.user_id == session['user_id']: 
         for p in c.payments: db.session.delete(p)
+        for ep in c.extra_payments: db.session.delete(ep)
         db.session.delete(c)
         db.session.commit()
     return redirect(url_for('dashboard'))
