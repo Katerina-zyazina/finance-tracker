@@ -37,7 +37,8 @@ class Transaction(db.Model):
     type = db.Column(db.String(10), nullable=False)
     date = db.Column(db.DateTime, default=db.func.current_timestamp())
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    payment_ref_id = db.Column(db.Integer, nullable=True)
+    payment_ref_id = db.Column(db.Integer, nullable=True)       # Связь с обычным платежом
+    extra_payment_ref_id = db.Column(db.Integer, nullable=True) # Связь с досрочным платежом
 
 class Credit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -147,7 +148,7 @@ def add_weeks(source_date, weeks):
     return source_date + timedelta(weeks=weeks)
 
 def generate_payment_schedule(credit):
-    """Генерирует график с учётом досрочных платежей"""
+    """Генерирует график платежей. Удаляет будущие неоплаченные платежи и создает новые на основе остатка."""
     for p in credit.payments:
         if not p.is_paid:
             db.session.delete(p)
@@ -332,7 +333,7 @@ def dashboard():
                 category=f"Кредит: {credit_name}", 
                 type='expense', 
                 user_id=user_id,
-                payment_ref_id=pay_id
+                payment_ref_id=pay_id  # Связь
             )
             db.session.add(trans)
             
@@ -367,14 +368,16 @@ def dashboard():
                 note=extra_note
             )
             db.session.add(extra_payment)
+            db.session.flush()  # Получаем ID для связки
             
-            # Создаём транзакцию
+            # Создаём транзакцию С ССЫЛКОЙ на досрочный платёж
             credit_name = credit.name if credit.name else "Без названия"
             trans = Transaction(
                 amount=extra_amount, 
                 category=f"Досрочно: {credit_name}", 
                 type='expense', 
-                user_id=user_id
+                user_id=user_id,
+                extra_payment_ref_id=extra_payment.id  # Связь!
             )
             db.session.add(trans)
             
@@ -454,8 +457,11 @@ def dashboard():
 @app.route('/delete_trans/<int:id>')
 @login_required
 def delete_transaction(id):
+    """Исправленная функция удаления: отменяет как обычные, так и досрочные платежи"""
     t = Transaction.query.get_or_404(id)
+    
     if t.user_id == session['user_id']:
+        # ✅ Если это обычный платёж по кредиту
         if t.payment_ref_id:
             payment = CreditPayment.query.get(t.payment_ref_id)
             if payment and payment.is_paid:
@@ -463,24 +469,18 @@ def delete_transaction(id):
                 payment.amount_paid = 0.0
                 generate_payment_schedule(payment.credit)
         
+        # ✅ Если это досрочный платёж
+        if t.extra_payment_ref_id:
+            extra_payment = ExtraCreditPayment.query.get(t.extra_payment_ref_id)
+            if extra_payment:
+                credit = extra_payment.credit
+                db.session.delete(extra_payment)
+                # Пересчитываем график (долг увеличивается)
+                generate_payment_schedule(credit)
+        
         db.session.delete(t)
         db.session.commit()
         flash('Операция удалена.', 'info')
-    return redirect(url_for('dashboard'))
-
-@app.route('/delete_extra/<int:id>')
-@login_required
-def delete_extra_payment(id):
-    """Удаление досрочного платежа"""
-    extra = ExtraCreditPayment.query.get_or_404(id)
-    credit = extra.credit
-    
-    if credit.user_id == session['user_id']:
-        db.session.delete(extra)
-        # Пересчитываем график (долг увеличивается)
-        generate_payment_schedule(credit)
-        db.session.commit()
-        flash('Досрочный платёж удалён. График восстановлен.', 'info')
     return redirect(url_for('dashboard'))
 
 @app.route('/delete_credit/<int:id>')
