@@ -4,7 +4,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 import os
 from datetime import datetime, timedelta
-import math
+from collections import defaultdict
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-me')
@@ -56,7 +56,6 @@ class Credit(db.Model):
 
     @property
     def total_with_interest(self):
-        """Общая сумма с процентами"""
         if self.interest_rate > 0:
             return self.total_amount * (1 + self.interest_rate / 100)
         return self.total_amount
@@ -67,7 +66,6 @@ class Credit(db.Model):
 
     @property
     def remaining_debt(self):
-        """Остаток с учётом процентов"""
         return max(0, self.total_with_interest - self.total_paid)
 
 class CreditPayment(db.Model):
@@ -135,7 +133,6 @@ def add_weeks(source_date, weeks):
     return source_date + timedelta(weeks=weeks)
 
 def generate_payment_schedule(credit):
-    """Генерирует график платежей с учётом процентов"""
     for p in credit.payments:
         if not p.is_paid:
             db.session.delete(p)
@@ -177,6 +174,47 @@ def generate_payment_schedule(credit):
         
         payment_count += 1
 
+def get_chart_data(user_id):
+    """Собирает данные для графиков"""
+    expenses_by_category = defaultdict(float)
+    transactions = Transaction.query.filter_by(user_id=user_id, type='expense').all()
+    
+    for t in transactions:
+        expenses_by_category[t.category] += t.amount
+    
+    months_data = []
+    today = datetime.utcnow()
+    
+    for i in range(5, -1, -1):
+        month_start = today.replace(day=1) - timedelta(days=30*i)
+        month_end = month_start + timedelta(days=31)
+        
+        month_income = sum(t.amount for t in Transaction.query.filter(
+            Transaction.user_id == user_id,
+            Transaction.type == 'income',
+            Transaction.date >= month_start,
+            Transaction.date < month_end
+        ).all())
+        
+        month_expense = sum(t.amount for t in Transaction.query.filter(
+            Transaction.user_id == user_id,
+            Transaction.type == 'expense',
+            Transaction.date >= month_start,
+            Transaction.date < month_end
+        ).all())
+        
+        months_data.append({
+            'month': month_start.strftime('%b'),
+            'income': month_income,
+            'expense': month_expense
+        })
+    
+    return {
+        'categories': list(expenses_by_category.keys()),
+        'category_amounts': list(expenses_by_category.values()),
+        'months_data': months_data
+    }
+
 # ================= МАРШРУТЫ =================
 
 @app.route('/')
@@ -215,7 +253,6 @@ def logout():
 def dashboard():
     user_id = session['user_id']
 
-    # 1. Транзакции
     if request.method == 'POST' and 'amount' in request.form and 'credit_name' not in request.form and 'bank_name' not in request.form and 'debtor_name' not in request.form and 'service_name' not in request.form and 'payment_id' not in request.form and 'payment_day' not in request.form:
         try:
             amount, category, trans_type = float(request.form.get('amount')), request.form.get('category'), request.form.get('type')
@@ -226,7 +263,6 @@ def dashboard():
         except Exception as e: flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
-    # 2. Создание КРЕДИТА
     if request.method == 'POST' and 'credit_name' in request.form:
         try:
             name = request.form.get('credit_name')
@@ -239,19 +275,11 @@ def dashboard():
             start_year = int(request.form.get('start_year', datetime.utcnow().year))
             
             new_credit = Credit(
-                name=name, 
-                total_amount=total, 
-                interest_rate=rate, 
-                monthly_payment_fixed=fixed_payment,
-                payment_frequency=frequency,
-                payment_day=payment_day,
-                start_month=start_month,
-                start_year=start_year,
-                user_id=user_id
+                name=name, total_amount=total, interest_rate=rate, monthly_payment_fixed=fixed_payment,
+                payment_frequency=frequency, payment_day=payment_day, start_month=start_month, start_year=start_year, user_id=user_id
             )
             db.session.add(new_credit)
             db.session.flush()
-
             generate_payment_schedule(new_credit)
             db.session.commit()
             flash('Кредит и график платежей созданы!', 'success')
@@ -260,7 +288,6 @@ def dashboard():
             flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
-    # 3. Внесение ПЛАТЕЖА (с созданием транзакции расхода!)
     if request.method == 'POST' and 'payment_id' in request.form:
         try:
             pay_id = int(request.form.get('payment_id'))
@@ -273,13 +300,7 @@ def dashboard():
                 payment.is_paid = True
                 payment.note = note
                 
-                # Создаём транзакцию расхода для платежа по кредиту
-                trans = Transaction(
-                    amount=paid_amount, 
-                    category=f"Кредит: {payment.credit.name}", 
-                    type='expense', 
-                    user_id=user_id
-                )
+                trans = Transaction(amount=paid_amount, category=f"Кредит: {payment.credit.name}", type='expense', user_id=user_id)
                 db.session.add(trans)
                 
                 generate_payment_schedule(payment.credit)
@@ -290,7 +311,6 @@ def dashboard():
             flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
-    # 4. Вклады
     if request.method == 'POST' and 'bank_name' in request.form:
         try:
             bank, desc = request.form.get('bank_name'), request.form.get('description')
@@ -301,7 +321,6 @@ def dashboard():
         except Exception as e: flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
-    # 5. Долги
     if request.method == 'POST' and 'debtor_name' in request.form:
         try:
             debtor, amount, desc = request.form.get('debtor_name'), float(request.form.get('amount')), request.form.get('description')
@@ -311,7 +330,6 @@ def dashboard():
         except Exception as e: flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
-    # 6. Подписки
     if request.method == 'POST' and 'service_name' in request.form:
         try:
             service, plan = request.form.get('service_name'), request.form.get('plan_name')
@@ -322,24 +340,16 @@ def dashboard():
         except Exception as e: flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
-    # Сбор данных
     transactions = Transaction.query.filter_by(user_id=user_id).order_by(Transaction.date.desc()).all()
     credits = Credit.query.filter_by(user_id=user_id).all()
     deposits = Deposit.query.filter_by(user_id=user_id).all()
     debts = DebtOwed.query.filter_by(user_id=user_id).all()
     subscriptions = Subscription.query.filter_by(user_id=user_id, is_active=True).all()
 
-    # ПРАВИЛЬНЫЙ РАСЧЁТ:
     income = sum(t.amount for t in transactions if t.type == 'income')
     expense = sum(t.amount for t in transactions if t.type == 'expense')
-    
-    # Добавляем подписки к расходам
     subscriptions_total = sum(s.cost for s in subscriptions)
-    
-    # Общие расходы = транзакции расходы + подписки
     total_expenses = expense + subscriptions_total
-    
-    # Баланс = доходы - расходы
     balance = income - total_expenses
     
     today = datetime.utcnow()
@@ -351,22 +361,15 @@ def dashboard():
                 upcoming_payments += p.amount_due
 
     total_debts_owed = sum(d.amount for d in debts if not d.is_paid)
+    
+    chart_data = get_chart_data(user_id)
 
     return render_template('dashboard.html', 
-                           transactions=transactions, 
-                           balance=balance, 
-                           income=income, 
-                           expense=total_expenses,  # Передаём общие расходы
-                           credits=credits, 
-                           deposits=deposits, 
-                           debts=debts, 
-                           subscriptions=subscriptions,
-                           upcoming_payments=upcoming_payments,
-                           total_subscriptions=subscriptions_total,
-                           total_debts_owed=total_debts_owed,
-                           now=datetime.utcnow())
+                           transactions=transactions, balance=balance, income=income, expense=total_expenses,
+                           credits=credits, deposits=deposits, debts=debts, subscriptions=subscriptions,
+                           upcoming_payments=upcoming_payments, total_subscriptions=subscriptions_total,
+                           total_debts_owed=total_debts_owed, now=datetime.utcnow(), chart_data=chart_data)
 
-# Удаления
 @app.route('/delete_trans/<int:id>')
 @login_required
 def delete_transaction(id):
