@@ -253,6 +253,7 @@ def logout():
 def dashboard():
     user_id = session['user_id']
 
+    # 1. Транзакции
     if request.method == 'POST' and 'amount' in request.form and 'credit_name' not in request.form and 'bank_name' not in request.form and 'debtor_name' not in request.form and 'service_name' not in request.form and 'payment_id' not in request.form and 'payment_day' not in request.form:
         try:
             amount, category, trans_type = float(request.form.get('amount')), request.form.get('category'), request.form.get('type')
@@ -263,6 +264,7 @@ def dashboard():
         except Exception as e: flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
+    # 2. Создание КРЕДИТА
     if request.method == 'POST' and 'credit_name' in request.form:
         try:
             name = request.form.get('credit_name')
@@ -288,6 +290,7 @@ def dashboard():
             flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
+    # 3. Внесение ПЛАТЕЖА по кредиту (ИСПРАВЛЕНО: категория теперь содержит название кредита)
     if request.method == 'POST' and 'payment_id' in request.form:
         try:
             pay_id = int(request.form.get('payment_id'))
@@ -300,7 +303,14 @@ def dashboard():
                 payment.is_paid = True
                 payment.note = note
                 
-                trans = Transaction(amount=paid_amount, category=f"Кредит: {payment.credit.name}", type='expense', user_id=user_id)
+                # Создаём транзакцию с понятной категорией: "Кредит: [Название]"
+                credit_name = payment.credit.name if payment.credit.name else "Без названия"
+                trans = Transaction(
+                    amount=paid_amount, 
+                    category=f"Кредит: {credit_name}", 
+                    type='expense', 
+                    user_id=user_id
+                )
                 db.session.add(trans)
                 
                 generate_payment_schedule(payment.credit)
@@ -311,6 +321,7 @@ def dashboard():
             flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
+    # 4. Вклады
     if request.method == 'POST' and 'bank_name' in request.form:
         try:
             bank, desc = request.form.get('bank_name'), request.form.get('description')
@@ -321,6 +332,7 @@ def dashboard():
         except Exception as e: flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
+    # 5. Долги
     if request.method == 'POST' and 'debtor_name' in request.form:
         try:
             debtor, amount, desc = request.form.get('debtor_name'), float(request.form.get('amount')), request.form.get('description')
@@ -330,6 +342,7 @@ def dashboard():
         except Exception as e: flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
+    # 6. Подписки
     if request.method == 'POST' and 'service_name' in request.form:
         try:
             service, plan = request.form.get('service_name'), request.form.get('plan_name')
@@ -340,6 +353,7 @@ def dashboard():
         except Exception as e: flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
+    # Сбор данных
     transactions = Transaction.query.filter_by(user_id=user_id).order_by(Transaction.date.desc()).all()
     credits = Credit.query.filter_by(user_id=user_id).all()
     deposits = Deposit.query.filter_by(user_id=user_id).all()
@@ -370,6 +384,7 @@ def dashboard():
                            upcoming_payments=upcoming_payments, total_subscriptions=subscriptions_total,
                            total_debts_owed=total_debts_owed, now=datetime.utcnow(), chart_data=chart_data)
 
+# Удаления
 @app.route('/delete_trans/<int:id>')
 @login_required
 def delete_transaction(id):
