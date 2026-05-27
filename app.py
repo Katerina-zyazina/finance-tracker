@@ -9,7 +9,6 @@ from collections import defaultdict
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-me')
 
-# Настройка базы данных
 if os.environ.get('DATABASE_URL'):
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
     app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI'].replace("postgres://", "postgresql://", 1)
@@ -38,6 +37,7 @@ class Transaction(db.Model):
     type = db.Column(db.String(10), nullable=False)
     date = db.Column(db.DateTime, default=db.func.current_timestamp())
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    payment_ref_id = db.Column(db.Integer, nullable=True)  # Связь с CreditPayment
 
 class Credit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -134,7 +134,6 @@ def add_weeks(source_date, weeks):
     return source_date + timedelta(weeks=weeks)
 
 def generate_payment_schedule(credit):
-    """Генерирует график платежей. Удаляет будущие неоплаченные платежи и создает новые на основе остатка."""
     for p in credit.payments:
         if not p.is_paid:
             db.session.delete(p)
@@ -177,7 +176,6 @@ def generate_payment_schedule(credit):
         payment_count += 1
 
 def get_chart_data(user_id):
-    """Собирает данные для графиков"""
     expenses_by_category = defaultdict(float)
     transactions = Transaction.query.filter_by(user_id=user_id, type='expense').all()
     
@@ -255,7 +253,7 @@ def logout():
 def dashboard():
     user_id = session['user_id']
 
-    # 1. Транзакции
+    # 1. Обычные транзакции
     if request.method == 'POST' and 'amount' in request.form and 'credit_name' not in request.form and 'bank_name' not in request.form and 'debtor_name' not in request.form and 'service_name' not in request.form and 'payment_id' not in request.form and 'payment_day' not in request.form:
         try:
             amount, category, trans_type = float(request.form.get('amount')), request.form.get('category'), request.form.get('type')
@@ -266,7 +264,7 @@ def dashboard():
         except Exception as e: flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
-    # 2. Создание КРЕДИТА
+    # 2. Создание кредита
     if request.method == 'POST' and 'credit_name' in request.form:
         try:
             name = request.form.get('credit_name')
@@ -292,7 +290,7 @@ def dashboard():
             flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
-    # 3. Внесение ПЛАТЕЖА по кредиту
+    # 3. Внесение платежа (С ЗАЩИТОЙ ОТ ПЕРЕПЛАТЫ)
     if request.method == 'POST' and 'payment_id' in request.form:
         try:
             pay_id = int(request.form.get('payment_id'))
@@ -300,24 +298,35 @@ def dashboard():
             note = request.form.get('note', '')
             
             payment = CreditPayment.query.get_or_404(pay_id)
-            if payment.credit.user_id == user_id:
-                payment.amount_paid = paid_amount
-                payment.is_paid = True
-                payment.note = note
-                
-                # Создаём транзакцию с понятной категорией
-                credit_name = payment.credit.name if payment.credit.name else "Без названия"
-                trans = Transaction(
-                    amount=paid_amount, 
-                    category=f"Кредит: {credit_name}", 
-                    type='expense', 
-                    user_id=user_id
-                )
-                db.session.add(trans)
-                
-                generate_payment_schedule(payment.credit)
-                db.session.commit()
-                flash('Платеж внесен! График пересчитан.', 'success')
+            credit = payment.credit
+            
+            if credit.user_id != user_id:
+                flash('Ошибка доступа.', 'danger')
+                return redirect(url_for('dashboard'))
+
+            # ✅ ЗАЩИТА: Нельзя внести больше, чем осталось по долгу
+            if paid_amount > credit.remaining_debt + 0.01:
+                flash(f'Нельзя внести {paid_amount} ₽. Остаток долга: {credit.remaining_debt} ₽', 'danger')
+                return redirect(url_for('dashboard'))
+
+            payment.amount_paid = paid_amount
+            payment.is_paid = True
+            payment.note = note
+            
+            # Создаём транзакцию с прямой ссылкой на платёж
+            credit_name = credit.name if credit.name else "Без названия"
+            trans = Transaction(
+                amount=paid_amount, 
+                category=f"Кредит: {credit_name}", 
+                type='expense', 
+                user_id=user_id,
+                payment_ref_id=pay_id  #  Прямая связь
+            )
+            db.session.add(trans)
+            
+            generate_payment_schedule(credit)
+            db.session.commit()
+            flash('Платеж внесен! График пересчитан.', 'success')
         except Exception as e:
             db.session.rollback()
             flash('Ошибка: ' + str(e), 'danger')
@@ -377,7 +386,6 @@ def dashboard():
                 upcoming_payments += p.amount_due
 
     total_debts_owed = sum(d.amount for d in debts if not d.is_paid)
-    
     chart_data = get_chart_data(user_id)
 
     return render_template('dashboard.html', 
@@ -386,37 +394,21 @@ def dashboard():
                            upcoming_payments=upcoming_payments, total_subscriptions=subscriptions_total,
                            total_debts_owed=total_debts_owed, now=datetime.utcnow(), chart_data=chart_data)
 
-# Удаления
+# ================= УДАЛЕНИЯ =================
+
 @app.route('/delete_trans/<int:id>')
 @login_required
 def delete_transaction(id):
-    """Исправленная функция удаления: теперь отменяет платёж по кредиту"""
     t = Transaction.query.get_or_404(id)
-    
     if t.user_id == session['user_id']:
-        # Проверяем, была ли это оплата кредита (по категории)
-        if t.category.startswith('Кредит:'):
-            # Находим все кредиты пользователя
-            all_credits = Credit.query.filter_by(user_id=session['user_id']).all()
-            
-            # Ищем соответствующий платёж в графике
-            for credit in all_credits:
-                for payment in credit.payments:
-                    # Критерии поиска: платёж оплачен, сумма совпадает (с погрешностью), дата совпадает
-                    if payment.is_paid:
-                        amount_match = abs(payment.amount_paid - t.amount) < 0.1
-                        date_match = abs((payment.due_date.date() - t.date.date()).days) <= 7
-                        
-                        if amount_match and date_match:
-                            # Отменяем платёж
-                            payment.is_paid = False
-                            payment.amount_paid = 0.0
-                            
-                            # Пересчитываем график (так как долг вернулся)
-                            generate_payment_schedule(credit)
-                            break
+        # ✅ Если это оплата кредита, отменяем платёж через прямую ссылку
+        if t.payment_ref_id:
+            payment = CreditPayment.query.get(t.payment_ref_id)
+            if payment and payment.is_paid:
+                payment.is_paid = False
+                payment.amount_paid = 0.0
+                generate_payment_schedule(payment.credit)
         
-        # Удаляем саму транзакцию
         db.session.delete(t)
         db.session.commit()
         flash('Операция удалена.', 'info')
@@ -453,7 +445,6 @@ def delete_subscription(id):
     if s.user_id == session['user_id']: db.session.delete(s); db.session.commit()
     return redirect(url_for('dashboard'))
 
-# Инициализация БД
 with app.app_context():
     db.create_all()
 
