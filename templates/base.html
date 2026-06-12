@@ -4,164 +4,225 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Finance Tracker{% endblock %}</title>
-    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Google Fonts: Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     
     <style>
-        /* === ПЕРЕМЕННЫЕ ДЛЯ СВЕТЛОЙ ТЕМЫ (ПО УМОЛЧАНИЮ) === */
         :root {
             --body-bg: #F3F4F6;
-            --text-color: #1F2937;
+            --text-color: #111827;
             --text-muted: #6B7280;
             --card-bg: #ffffff;
             --navbar-bg: #ffffff;
             --input-bg: #F9FAFB;
-            --input-border: #E5E7EB;
-            --shadow-color: rgba(0, 0, 0, 0.05);
+            --input-border: #D1D5DB;
+            --input-text: #111827;
+            --shadow-color: rgba(0, 0, 0, 0.08);
             --border-color: #E5E7EB;
         }
 
-        /* === ПЕРЕМЕННЫЕ ДЛЯ ТЕМНОЙ ТЕМЫ === */
         body.dark-mode {
-            --body-bg: #111827;
-            --text-color: #F9FAFB;
-            --text-muted: #9CA3AF;
-            --card-bg: #1F2937;
-            --navbar-bg: #1F2937;
-            --input-bg: #374151;
-            --input-border: #4B5563;
-            --shadow-color: rgba(0, 0, 0, 0.3);
-            --border-color: #374151;
+            --body-bg: #0F172A;
+            --text-color: #F1F5F9;
+            --text-muted: #94A3B8;
+            --card-bg: #1E293B;
+            --navbar-bg: #1E293B;
+            --input-bg: #334155;
+            --input-border: #475569;
+            --input-text: #F1F5F9;
+            --shadow-color: rgba(0, 0, 0, 0.4);
+            --border-color: #334155;
         }
 
-        /* === ОБЩИЕ СТИЛИ === */
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--body-bg);
-            color: var(--text-color);
-            transition: background-color 0.3s, color 0.3s;
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--body-bg); 
+            color: var(--text-color); 
+            transition: background-color 0.3s, color 0.3s; 
         }
 
-        /* Навигация */
-        .navbar {
-            background: var(--navbar-bg) !important;
+        .navbar { 
+            background: var(--navbar-bg) !important; 
             box-shadow: 0 2px 15px var(--shadow-color);
             padding: 1rem 0;
             transition: background-color 0.3s;
+            border-bottom: 1px solid var(--border-color);
         }
-        .navbar-brand {
-            font-weight: 700;
-            color: #4F46E5 !important;
-            font-size: 1.25rem;
+        .navbar-brand { 
+            font-weight: 700; 
+            color: #6366F1 !important; 
+            font-size: 1.25rem; 
         }
 
-        /* Карточки */
-        .card {
+        .card { 
             border: 1px solid var(--border-color);
-            border-radius: 16px;
+            border-radius: 16px; 
             box-shadow: 0 4px 20px var(--shadow-color);
-            transition: transform 0.2s, background-color 0.3s;
             background: var(--card-bg);
+            transition: transform 0.2s, background-color 0.3s, border-color 0.3s;
         }
-        .card:hover { transform: translateY(-3px); }
-        
-        /* Заголовки карточек */
-        .card-header {
-            background: transparent;
+        .card:hover { 
+            transform: translateY(-3px); 
+        }
+        .card-header { 
+            background: transparent; 
             border-bottom: 1px solid var(--border-color);
             color: var(--text-color);
+            font-weight: 600;
         }
 
-        /* Статистика (Градиенты остаются яркими) */
-        .stat-card {
-            color: white;
-            border-radius: 20px;
-            padding: 1.5rem;
-            position: relative;
+        .stat-card { 
+            color: white; 
+            border-radius: 20px; 
+            padding: 1.5rem; 
+            position: relative; 
             overflow: hidden;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
         }
-        .bg-gradient-primary { background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); }
-        .bg-gradient-success { background: linear-gradient(135deg, #10B981 0%, #059669 100%); }
-        .bg-gradient-danger { background: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%); }
+        .bg-gradient-primary { background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%); }
+        .bg-gradient-success { background: linear-gradient(135deg, #10B981 0%, #34D399 100%); }
+        .bg-gradient-danger { background: linear-gradient(135deg, #EF4444 0%, #F87171 100%); }
+        .bg-gradient-info { background: linear-gradient(135deg, #06B6D4 0%, #22D3EE 100%); }
 
-        /* Формы */
-        .form-control, .form-select {
-            border-radius: 10px;
-            border: 1px solid var(--input-border);
-            padding: 0.6rem 1rem;
+        .form-control, .form-select { 
+            border-radius: 10px; 
+            border: 1px solid var(--input-border); 
+            padding: 0.6rem 1rem; 
+            background-color: var(--input-bg); 
+            color: var(--input-text);
+            font-weight: 500;
+        }
+        .form-control:focus, .form-select:focus { 
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2); 
+            border-color: #6366F1; 
+            background-color: var(--card-bg);
+            color: var(--input-text);
+        }
+        .form-control::placeholder { 
+            color: var(--text-muted); 
+            opacity: 0.7;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+            border: none; 
+            border-radius: 10px; 
+            padding: 0.6rem 1.2rem; 
+            font-weight: 600;
+            color: white !important;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+        .btn-primary:hover { 
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-outline-secondary {
+            color: var(--text-color);
+            border-color: var(--input-border);
+        }
+        .btn-outline-secondary:hover {
             background-color: var(--input-bg);
             color: var(--text-color);
-            transition: background-color 0.3s, border-color 0.3s;
         }
-        .form-control:focus, .form-select:focus {
-            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.2);
-            border-color: #4F46E5;
+
+        .table { 
+            color: var(--text-color); 
+        }
+        .table thead th { 
+            border-bottom: 2px solid var(--border-color); 
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+        .table td { 
+            border-color: var(--border-color); 
+            color: var(--text-color);
+            font-weight: 500;
+        }
+        .table-hover tbody tr:hover {
+            background-color: var(--input-bg);
+        }
+
+        .floating-alert { 
+            position: fixed; 
+            top: 80px; 
+            right: 20px; 
+            z-index: 1050; 
+            min-width: 300px; 
+        }
+
+        .theme-toggle-btn { 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            gap: 6px;
+            font-weight: 500;
+        }
+
+        .badge {
+            font-weight: 600;
+            padding: 0.5em 0.8em;
+        }
+
+        .accordion-button {
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+        .accordion-button:not(.collapsed) {
+            background-color: var(--input-bg);
+            color: var(--text-color);
+        }
+        .accordion-item {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+        }
+
+        .nav-pills .nav-link {
+            color: var(--text-muted);
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+        }
+        .nav-pills .nav-link.active {
+            background-color: #6366F1;
+            color: white;
+        }
+
+        .list-group-item {
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            border-color: var(--border-color);
+        }
+
+        .modal-content {
             background-color: var(--card-bg);
             color: var(--text-color);
         }
-        
-        /* Placeholder текст */
-        .form-control::placeholder { color: var(--text-muted); }
-
-        /* Кнопки */
-        .btn-primary {
-            background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
-            border: none;
-            border-radius: 10px;
-            padding: 0.6rem 1.2rem;
-            font-weight: 500;
+        .modal-header {
+            border-bottom-color: var(--border-color);
         }
-        .btn-primary:hover { opacity: 0.9; }
-
-        /* Таблицы */
-        .table { color: var(--text-color); }
-        .table thead th {
-            border-bottom: 2px solid var(--border-color);
-            color: var(--text-muted);
-        }
-        .table td { border-color: var(--border-color); }
-
-        /* Алерты */
-        .floating-alert {
-            position: fixed;
-            top: 80px;
-            right: 20px;
-            z-index: 1050;
-            min-width: 300px;
-        }
-
-        /* Кнопка переключения темы */
-        .theme-toggle {
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 50%;
-            transition: background 0.3s;
-            color: var(--text-color);
-        }
-        .theme-toggle:hover {
-            background-color: rgba(128,128,128, 0.2);
+        .modal-footer {
+            border-top-color: var(--border-color);
         }
     </style>
 </head>
 <body>
 
-    <!-- Навигация -->
     <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container">
             <a class="navbar-brand" href="/"><i class="bi bi-wallet2 me-2"></i>Finance Tracker</a>
-            
             <div class="d-flex align-items-center gap-3">
-                <!-- Кнопка смены темы -->
-                <div class="theme-toggle" id="themeToggle" title="Сменить тему">
+                <button class="btn btn-sm btn-outline-secondary theme-toggle-btn" id="themeToggle" type="button">
                     <i class="bi bi-moon-stars-fill" id="themeIcon"></i>
-                </div>
-
+                    <span id="themeText">Тема</span>
+                </button>
                 {% if session.get('user_id') %}
-                    <span class="text-muted small fw-bold d-none d-md-block">{{ session.get('username') }}</span>
+                    <span class="fw-bold" style="color: var(--text-color);">{{ session.get('username') }}</span>
                     <a href="{{ url_for('logout') }}" class="btn btn-sm btn-outline-secondary">Выйти</a>
                 {% else %}
                     <a href="{{ url_for('login') }}" class="btn btn-primary btn-sm px-4">Войти</a>
@@ -170,12 +231,11 @@
         </div>
     </nav>
 
-    <!-- Алерты -->
     <div class="container floating-alert">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm border-0" role="alert">
+                    <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
                         {{ message }}
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
@@ -190,35 +250,34 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
     <script>
-        // === ЛОГИКА ТЕМНОЙ ТЕМЫ ===
         const toggleBtn = document.getElementById('themeToggle');
         const icon = document.getElementById('themeIcon');
+        const themeText = document.getElementById('themeText');
         const body = document.body;
 
-        // 1. Проверяем сохраненную тему при загрузке
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme === 'dark') {
             body.classList.add('dark-mode');
             icon.classList.replace('bi-moon-stars-fill', 'bi-sun-fill');
+            if(themeText) themeText.textContent = 'Светлая';
         }
 
-        // 2. Обработка клика
-        toggleBtn.addEventListener('click', () => {
-            body.classList.toggle('dark-mode');
-            
-            // Меняем иконку и сохраняем выбор
-            if (body.classList.contains('dark-mode')) {
-                icon.classList.replace('bi-moon-stars-fill', 'bi-sun-fill');
-                localStorage.setItem('theme', 'dark');
-            } else {
-                icon.classList.replace('bi-sun-fill', 'bi-moon-stars-fill');
-                localStorage.setItem('theme', 'light');
-            }
-        });
+        if(toggleBtn) {
+            toggleBtn.addEventListener('click', () => {
+                body.classList.toggle('dark-mode');
+                if (body.classList.contains('dark-mode')) {
+                    icon.classList.replace('bi-moon-stars-fill', 'bi-sun-fill');
+                    if(themeText) themeText.textContent = 'Светлая';
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    icon.classList.replace('bi-sun-fill', 'bi-moon-stars-fill');
+                    if(themeText) themeText.textContent = 'Тёмная';
+                    localStorage.setItem('theme', 'light');
+                }
+            });
+        }
 
-        // Авто-скрытие уведомлений (из прошлого кода)
         document.addEventListener('DOMContentLoaded', function() {
             const alerts = document.querySelectorAll('.alert');
             alerts.forEach(function(alert) {
