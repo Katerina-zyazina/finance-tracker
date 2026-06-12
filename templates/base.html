@@ -90,15 +90,21 @@
             color: var(--text-color);
         }
 
-        /* Статистические карточки */
+        /* === ВАЖНО: Цветные карточки статистики (всегда белый текст) === */
         .stat-card { 
-            color: white; 
+            color: white !important; /* Принудительно белый текст */
             border-radius: 20px; 
             padding: 1.5rem; 
             position: relative; 
             overflow: hidden;
             box-shadow: 0 8px 30px rgba(0,0,0,0.2);
         }
+        /* Принудительно белый цвет для всех элементов внутри цветных карточек */
+        .stat-card h1, .stat-card h2, .stat-card h3, .stat-card h4, .stat-card h5, .stat-card h6,
+        .stat-card small, .stat-card p, .stat-card span, .stat-card div {
+            color: white !important;
+        }
+        
         .bg-gradient-primary { background: linear-gradient(135deg, #6C5CE7 0%, #A29BFE 100%); }
         .bg-gradient-success { background: linear-gradient(135deg, #00B894 0%, #55EFC4 100%); }
         .bg-gradient-danger { background: linear-gradient(135deg, #E17055 0%, #FDCB6E 100%); }
