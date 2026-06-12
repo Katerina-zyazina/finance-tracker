@@ -228,6 +228,126 @@ def get_chart_data(user_id):
         'months_data': months_data
     }
 
+def get_recommendations(user_id):
+    """Генерирует персональные финансовые рекомендации"""
+    recommendations = []
+    
+    transactions = Transaction.query.filter_by(user_id=user_id).all()
+    credits = Credit.query.filter_by(user_id=user_id).all()
+    subscriptions = Subscription.query.filter_by(user_id=user_id, is_active=True).all()
+    
+    # АНАЛИЗ
+    income = sum(t.amount for t in transactions if t.type == 'income')
+    expense = sum(t.amount for t in transactions if t.type == 'expense')
+    balance = income - expense
+    
+    expenses_by_category = defaultdict(float)
+    for t in transactions:
+        if t.type == 'expense':
+            expenses_by_category[t.category] += t.amount
+    
+    today = datetime.utcnow()
+    upcoming_credit_payments = sum(
+        p.amount_due for c in credits 
+        for p in c.payments 
+        if not p.is_paid and p.due_date >= today and p.due_date < today + timedelta(days=30)
+    )
+    
+    # ГЕНЕРАЦИЯ РЕКОМЕНДАЦИЙ
+    
+    # 💡 Совет по накоплениям
+    if income > 0 and balance > 0:
+        save_amount = min(balance * 0.2, 10000)
+        if save_amount >= 1000:
+            recommendations.append({
+                'icon': '🎯',
+                'title': 'Цель на месяц',
+                'text': f'Отложи {int(save_amount)}₽ в этом месяце — это укрепит финансовую подушку',
+                'type': 'success'
+            })
+    
+    # 💡 Совет по высоким тратам
+    if expenses_by_category:
+        top_category = max(expenses_by_category, key=expenses_by_category.get)
+        top_amount = expenses_by_category[top_category]
+        
+        if expense > 0 and top_amount / expense > 0.3:
+            recommendations.append({
+                'icon': '🔍',
+                'title': 'Анализ трат',
+                'text': f'На "{top_category}" уходит {int(top_amount)}₽ ({int(top_amount/expense*100)}% расходов). Можно оптимизировать?',
+                'type': 'warning'
+            })
+    
+    # 💡 Совет по кофе/развлечениям
+    coffee_keywords = ['кофе', 'кофейня', 'starbucks', 'кофейный']
+    for category in expenses_by_category:
+        if any(kw in category.lower() for kw in coffee_keywords):
+            amount = expenses_by_category[category]
+            if amount > 1000:
+                recommendations.append({
+                    'icon': '☕',
+                    'title': 'Экономия на мелочах',
+                    'text': f'У тебя много трат на кофе ({int(amount)}₽). Домашний кофе сэкономит до {int(amount*0.7)}₽ в месяц!',
+                    'type': 'info'
+                })
+                break
+    
+    # 💡 Совет по кредитам
+    if credits:
+        total_credit_debt = sum(c.remaining_debt for c in credits)
+        if total_credit_debt > 50000:
+            recommendations.append({
+                'icon': '💳',
+                'title': 'Кредитная нагрузка',
+                'text': f'Общий долг по кредитам: {int(total_credit_debt)}₽. Рассмотрите досрочное погашение для экономии на процентах',
+                'type': 'danger'
+            })
+    
+    # 💡 Совет по подпискам
+    if subscriptions:
+        total_subs = sum(s.cost for s in subscriptions)
+        if total_subs > 2000:
+            recommendations.append({
+                'icon': '📺',
+                'title': 'Подписки',
+                'text': f'Ежемесячно на подписки уходит {int(total_subs)}₽. Проверь, все ли сервисы ты действительно используешь?',
+                'type': 'warning'
+            })
+    
+    # 💡 Совет если баланс отрицательный
+    if balance < 0:
+        recommendations.append({
+            'icon': '⚠️',
+            'title': 'Внимание',
+            'text': f'Расходы превышают доходы на {int(abs(balance))}₽. Пора пересмотреть бюджет',
+            'type': 'danger'
+        })
+    
+    # 💡 Совет если нет накоплений
+    if income > 0 and balance < income * 0.1:
+        recommendations.append({
+            'icon': '🐷',
+            'title': 'Накопления',
+            'text': 'Попробуй откладывать хотя бы 10% от дохода — через год это даст ощутимый результат',
+            'type': 'info'
+        })
+    
+    # Если рекомендаций мало — добавим общие
+    if len(recommendations) < 2:
+        general_tips = [
+            {'icon': '📊', 'title': 'Совет', 'text': 'Веди учёт трат ежедневно — это помогает контролировать бюджет', 'type': 'info'},
+            {'icon': '🎁', 'title': 'Совет', 'text': 'Создай финансовую цель: отпуск, гаджет, обучение — так легче мотивировать себя экономить', 'type': 'success'},
+            {'icon': '🔄', 'title': 'Совет', 'text': 'Раз в месяц пересматривай подписки и кредиты — возможно, найдёшь способ сэкономить', 'type': 'info'},
+        ]
+        for tip in general_tips:
+            if len(recommendations) >= 3:
+                break
+            if tip not in recommendations:
+                recommendations.append(tip)
+    
+    return recommendations[:3]
+
 # ================= МАРШРУТЫ =================
 
 @app.route('/')
@@ -266,7 +386,6 @@ def logout():
 def dashboard():
     user_id = session['user_id']
 
-    # 1. Обычные транзакции
     if request.method == 'POST' and 'amount' in request.form and 'credit_name' not in request.form and 'bank_name' not in request.form and 'debtor_name' not in request.form and 'service_name' not in request.form and 'payment_id' not in request.form and 'payment_day' not in request.form and 'extra_credit_id' not in request.form:
         try:
             amount, category, trans_type = float(request.form.get('amount')), request.form.get('category'), request.form.get('type')
@@ -277,7 +396,6 @@ def dashboard():
         except Exception as e: flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
-    # 2. Создание кредита
     if request.method == 'POST' and 'credit_name' in request.form:
         try:
             name = request.form.get('credit_name')
@@ -303,7 +421,6 @@ def dashboard():
             flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
-    # 3. Внесение платежа по графику
     if request.method == 'POST' and 'payment_id' in request.form:
         try:
             pay_id = int(request.form.get('payment_id'))
@@ -343,7 +460,6 @@ def dashboard():
             flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
-    # 4. ДОСРОЧНЫЙ ПЛАТЕЖ
     if request.method == 'POST' and 'extra_credit_id' in request.form:
         try:
             credit_id = int(request.form.get('extra_credit_id'))
@@ -385,7 +501,6 @@ def dashboard():
             flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
-    # 5. Вклады
     if request.method == 'POST' and 'bank_name' in request.form:
         try:
             bank, desc = request.form.get('bank_name'), request.form.get('description')
@@ -396,7 +511,6 @@ def dashboard():
         except Exception as e: flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
-    # 6. Долги
     if request.method == 'POST' and 'debtor_name' in request.form:
         try:
             debtor, amount, desc = request.form.get('debtor_name'), float(request.form.get('amount')), request.form.get('description')
@@ -406,7 +520,6 @@ def dashboard():
         except Exception as e: flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
-    # 7. Подписки
     if request.method == 'POST' and 'service_name' in request.form:
         try:
             service, plan = request.form.get('service_name'), request.form.get('plan_name')
@@ -417,7 +530,6 @@ def dashboard():
         except Exception as e: flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
-    # Сбор данных
     transactions = Transaction.query.filter_by(user_id=user_id).order_by(Transaction.date.desc()).all()
     credits = Credit.query.filter_by(user_id=user_id).all()
     deposits = Deposit.query.filter_by(user_id=user_id).all()
@@ -440,20 +552,19 @@ def dashboard():
 
     total_debts_owed = sum(d.amount for d in debts if not d.is_paid)
     chart_data = get_chart_data(user_id)
+    recommendations = get_recommendations(user_id)
 
     return render_template('dashboard.html', 
                            transactions=transactions, balance=balance, income=income, expense=total_expenses,
                            credits=credits, deposits=deposits, debts=debts, subscriptions=subscriptions,
                            upcoming_payments=upcoming_payments, total_subscriptions=subscriptions_total,
-                           total_debts_owed=total_debts_owed, now=datetime.utcnow(), chart_data=chart_data)
-
-# ================= УДАЛЕНИЯ =================
+                           total_debts_owed=total_debts_owed, now=datetime.utcnow(), 
+                           chart_data=chart_data, recommendations=recommendations)
 
 @app.route('/delete_trans/<int:id>')
 @login_required
 def delete_transaction(id):
     t = Transaction.query.get_or_404(id)
-    
     if t.user_id == session['user_id']:
         if t.payment_ref_id:
             payment = CreditPayment.query.get(t.payment_ref_id)
@@ -479,7 +590,6 @@ def delete_transaction(id):
 def delete_extra_payment(id):
     extra = ExtraCreditPayment.query.get_or_404(id)
     credit = extra.credit
-    
     if credit.user_id == session['user_id']:
         db.session.delete(extra)
         generate_payment_schedule(credit)
