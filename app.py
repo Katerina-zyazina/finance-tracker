@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
@@ -236,7 +236,6 @@ def get_recommendations(user_id):
     credits = Credit.query.filter_by(user_id=user_id).all()
     subscriptions = Subscription.query.filter_by(user_id=user_id, is_active=True).all()
     
-    # АНАЛИЗ
     income = sum(t.amount for t in transactions if t.type == 'income')
     expense = sum(t.amount for t in transactions if t.type == 'expense')
     balance = income - expense
@@ -253,9 +252,6 @@ def get_recommendations(user_id):
         if not p.is_paid and p.due_date >= today and p.due_date < today + timedelta(days=30)
     )
     
-    # ГЕНЕРАЦИЯ РЕКОМЕНДАЦИЙ
-    
-    # 💡 Совет по накоплениям
     if income > 0 and balance > 0:
         save_amount = min(balance * 0.2, 10000)
         if save_amount >= 1000:
@@ -266,7 +262,6 @@ def get_recommendations(user_id):
                 'type': 'success'
             })
     
-    # 💡 Совет по высоким тратам
     if expenses_by_category:
         top_category = max(expenses_by_category, key=expenses_by_category.get)
         top_amount = expenses_by_category[top_category]
@@ -279,7 +274,6 @@ def get_recommendations(user_id):
                 'type': 'warning'
             })
     
-    # 💡 Совет по кофе/развлечениям
     coffee_keywords = ['кофе', 'кофейня', 'starbucks', 'кофейный']
     for category in expenses_by_category:
         if any(kw in category.lower() for kw in coffee_keywords):
@@ -293,7 +287,6 @@ def get_recommendations(user_id):
                 })
                 break
     
-    # 💡 Совет по кредитам
     if credits:
         total_credit_debt = sum(c.remaining_debt for c in credits)
         if total_credit_debt > 50000:
@@ -304,7 +297,6 @@ def get_recommendations(user_id):
                 'type': 'danger'
             })
     
-    # 💡 Совет по подпискам
     if subscriptions:
         total_subs = sum(s.cost for s in subscriptions)
         if total_subs > 2000:
@@ -315,7 +307,6 @@ def get_recommendations(user_id):
                 'type': 'warning'
             })
     
-    # 💡 Совет если баланс отрицательный
     if balance < 0:
         recommendations.append({
             'icon': '⚠️',
@@ -324,7 +315,6 @@ def get_recommendations(user_id):
             'type': 'danger'
         })
     
-    # 💡 Совет если нет накоплений
     if income > 0 and balance < income * 0.1:
         recommendations.append({
             'icon': '🐷',
@@ -333,7 +323,6 @@ def get_recommendations(user_id):
             'type': 'info'
         })
     
-    # Если рекомендаций мало — добавим общие
     if len(recommendations) < 2:
         general_tips = [
             {'icon': '📊', 'title': 'Совет', 'text': 'Веди учёт трат ежедневно — это помогает контролировать бюджет', 'type': 'info'},
@@ -560,6 +549,119 @@ def dashboard():
                            upcoming_payments=upcoming_payments, total_subscriptions=subscriptions_total,
                            total_debts_owed=total_debts_owed, now=datetime.utcnow(), 
                            chart_data=chart_data, recommendations=recommendations)
+
+# ================= ПОИСК И ФИЛЬТРАЦИЯ =================
+
+@app.route('/api/search/transactions')
+@login_required
+def search_transactions():
+    """API для поиска и фильтрации транзакций"""
+    user_id = session['user_id']
+    
+    search = request.args.get('search', '').strip()
+    trans_type = request.args.get('type', '')
+    date_from = request.args.get('date_from', '')
+    date_to = request.args.get('date_to', '')
+    min_amount = request.args.get('min_amount', type=float)
+    max_amount = request.args.get('max_amount', type=float)
+    category = request.args.get('category', '')
+    
+    query = Transaction.query.filter_by(user_id=user_id)
+    
+    if search:
+        search_pattern = f'%{search}%'
+        query = query.filter(
+            db.or_(
+                Transaction.category.ilike(search_pattern),
+            )
+        )
+    
+    if trans_type:
+        query = query.filter_by(type=trans_type)
+    
+    if category:
+        query = query.filter_by(category=category)
+    
+    if date_from:
+        try:
+            date_from_dt = datetime.strptime(date_from, '%Y-%m-%d')
+            query = query.filter(Transaction.date >= date_from_dt)
+        except:
+            pass
+    
+    if date_to:
+        try:
+            date_to_dt = datetime.strptime(date_to, '%Y-%m-%d')
+            query = query.filter(Transaction.date <= date_to_dt)
+        except:
+            pass
+    
+    if min_amount is not None:
+        query = query.filter(Transaction.amount >= min_amount)
+    
+    if max_amount is not None:
+        query = query.filter(Transaction.amount <= max_amount)
+    
+    query = query.order_by(Transaction.date.desc())
+    
+    transactions = query.all()
+    
+    result = []
+    for t in transactions:
+        result.append({
+            'id': t.id,
+            'amount': t.amount,
+            'category': t.category,
+            'type': t.type,
+            'date': t.date.strftime('%d.%m.%Y'),
+            'date_raw': t.date.isoformat()
+        })
+    
+    return {'transactions': result, 'total': len(result)}
+
+@app.route('/api/search/credits')
+@login_required
+def search_credits():
+    """API для поиска кредитов"""
+    user_id = session['user_id']
+    search = request.args.get('search', '').strip()
+    
+    query = Credit.query.filter_by(user_id=user_id)
+    
+    if search:
+        search_pattern = f'%{search}%'
+        query = query.filter(Credit.name.ilike(search_pattern))
+    
+    credits = query.all()
+    
+    result = []
+    for c in credits:
+        result.append({
+            'id': c.id,
+            'name': c.name,
+            'total_amount': c.total_amount,
+            'remaining_debt': c.remaining_debt,
+            'interest_rate': c.interest_rate,
+            'monthly_payment': c.monthly_payment_fixed
+        })
+    
+    return {'credits': result, 'total': len(result)}
+
+@app.route('/api/statistics/categories')
+@login_required
+def get_categories():
+    """API для получения списка категорий"""
+    user_id = session['user_id']
+    
+    categories = db.session.query(Transaction.category).filter_by(
+        user_id=user_id, type='expense'
+    ).distinct().all()
+    
+    category_list = [cat[0] for cat in categories if cat[0]]
+    
+    return {'categories': sorted(category_list)}
+
+# ================= УДАЛЕНИЯ =================
 
 @app.route('/delete_trans/<int:id>')
 @login_required

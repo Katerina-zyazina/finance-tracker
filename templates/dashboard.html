@@ -25,7 +25,6 @@
     <div class="col-md-3"><div class="card border-0 shadow-sm h-100"><div class="card-body text-center"><h6 class="text-muted mb-2">Свободно</h6><h4 class="fw-bold text-success mb-0">{{ balance - upcoming_payments }} ₽</h4></div></div></div>
 </div>
 
-<!-- 💡 РЕКОМЕНДАЦИИ ИИ -->
 {% if recommendations %}
 <div class="mb-5">
     <h5 class="fw-bold mb-3">💡 Персональные советы</h5>
@@ -74,13 +73,34 @@
                 <div class="col-md-2"><input type="number" step="0.1" name="interest_rate" class="form-control" placeholder="Процент"></div>
                 <div class="col-md-2"><input type="number" step="0.01" name="monthly_payment_fixed" class="form-control" placeholder="Платеж" required></div>
                 <div class="col-md-2 d-flex align-items-end"><button type="submit" class="btn btn-primary w-100 py-2" style="min-width: 150px;">Создать кредит</button></div>
-                <div class="col-12"><hr class="my-3"><h6 class="fw-bold mb-3"> Настройки графика</h6></div>
+                <div class="col-12"><hr class="my-3"><h6 class="fw-bold mb-3">📅 Настройки графика</h6></div>
                 <div class="col-md-3"><select name="payment_frequency" class="form-select" id="frequencySelect" onchange="togglePaymentDay()"><option value="monthly">Ежемесячно</option><option value="biweekly">Каждые 2 недели</option></select></div>
                 <div class="col-md-2" id="paymentDayBlock"><select name="payment_day" class="form-select">{% for day in range(1, 29) %}<option value="{{ day }}">{{ day }}</option>{% endfor %}</select></div>
                 <div class="col-md-2" id="weekdayBlock" style="display:none;"><select name="payment_day" class="form-select"><option value="0">Пн</option><option value="1">Вт</option><option value="2">Ср</option><option value="3">Чт</option><option value="4">Пт</option></select></div>
                 <div class="col-md-2"><select name="start_month" class="form-select">{% for m in range(1, 13) %}<option value="{{ m }}" {% if m==now.month %}selected{% endif %}>{{ ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'][m-1] }}</option>{% endfor %}</select></div>
                 <div class="col-md-2"><select name="start_year" class="form-select">{% for y in range(now.year, now.year+3) %}<option value="{{ y }}" {% if y==now.year %}selected{% endif %}>{{ y }}</option>{% endfor %}</select></div>
             </form>
+        </div>
+
+        <!-- Поиск кредитов -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-3">
+                <h6 class="fw-bold mb-3">🔍 Поиск кредитов</h6>
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-0"><i class="bi bi-search text-muted"></i></span>
+                            <input type="text" class="form-control border-0 bg-light" id="creditSearchInput" placeholder="Поиск по названию кредита...">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-outline-secondary w-100" onclick="resetCreditSearch()">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i> Сбросить
+                        </button>
+                    </div>
+                </div>
+                <div id="creditSearchResults" class="mt-3" style="display:none;"></div>
+            </div>
         </div>
 
         <div class="accordion" id="accordionCredits">
@@ -205,30 +225,129 @@
 
 </div>
 
+<!-- 🔍 ПОИСК И ФИЛЬТРАЦИЯ ТРАНЗАКЦИЙ -->
+<div class="mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-bold mb-0">📋 История операций</h4>
+        <button class="btn btn-sm btn-outline-secondary" onclick="toggleFilters()">
+            <i class="bi bi-funnel me-1"></i> Фильтры
+        </button>
+    </div>
+
+    <!-- Панель фильтров (скрыта по умолчанию) -->
+    <div class="card border-0 shadow-sm mb-4" id="filterPanel" style="display:none;">
+        <div class="card-body p-3">
+            <h6 class="fw-bold mb-3">🔍 Поиск и фильтрация</h6>
+            <div class="row g-3">
+                <!-- Поиск по тексту -->
+                <div class="col-md-4">
+                    <label class="form-label small text-muted">Поиск по категории</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-0"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" class="form-control border-0 bg-light" id="filterSearch" placeholder="Например: кофе, зарплата...">
+                    </div>
+                </div>
+                
+                <!-- Тип операции -->
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">Тип</label>
+                    <select class="form-select" id="filterType">
+                        <option value="">Все типы</option>
+                        <option value="income"> Доходы</option>
+                        <option value="expense">📤 Расходы</option>
+                    </select>
+                </div>
+                
+                <!-- Категория -->
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">Категория</label>
+                    <select class="form-select" id="filterCategory">
+                        <option value="">Все категории</option>
+                    </select>
+                </div>
+                
+                <!-- Дата от -->
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">Дата от</label>
+                    <input type="date" class="form-control" id="filterDateFrom">
+                </div>
+                
+                <!-- Дата до -->
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">Дата до</label>
+                    <input type="date" class="form-control" id="filterDateTo">
+                </div>
+                
+                <!-- Сумма от -->
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">Сумма от</label>
+                    <input type="number" class="form-control" id="filterMinAmount" placeholder="0">
+                </div>
+                
+                <!-- Сумма до -->
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">Сумма до</label>
+                    <input type="number" class="form-control" id="filterMaxAmount" placeholder="∞">
+                </div>
+                
+                <!-- Кнопки -->
+                <div class="col-md-4 d-flex align-items-end gap-2">
+                    <button class="btn btn-primary flex-grow-1" onclick="applyFilters()">
+                        <i class="bi bi-funnel-fill me-1"></i> Применить
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="resetFilters()">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Информация о найденных результатах -->
+            <div class="mt-3 pt-3 border-top">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted small" id="filterResultsInfo">Показаны все операции</span>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-primary active" id="sortNewest" onclick="setSortOrder('newest')">Сначала новые</button>
+                        <button class="btn btn-outline-primary" id="sortOldest" onclick="setSortOrder('oldest')">Сначала старые</button>
+                        <button class="btn btn-outline-primary" id="sortAmount" onclick="setSortOrder('amount')">По сумме</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Таблица результатов -->
+    <div class="card p-0 overflow-hidden">
+        <table class="table table-hover mb-0">
+            <thead class="bg-light">
+                <tr><th class="ps-4">Дата</th><th>Категория</th><th>Тип</th><th>Сумма</th><th></th></tr>
+            </thead>
+            <tbody id="transactionsTableBody">
+                {% for t in transactions %}
+                <tr>
+                    <td class="ps-4 text-muted">{{ t.date.strftime('%d.%m') }}</td>
+                    <td class="fw-bold">{{ t.category }}</td>
+                    <td><span class="badge {{ 'bg-success-subtle text-success' if t.type=='income' else 'bg-danger-subtle text-danger' }}">{{ 'Доход' if t.type=='income' else 'Расход' }}</span></td>
+                    <td class="fw-bold {{ 'text-success' if t.type=='income' else 'text-danger' }}">{{ '+' if t.type=='income' else '-' }}{{ t.amount }} ₽</td>
+                    <td><a href="{{ url_for('delete_transaction', id=t.id) }}" class="text-muted"></a></td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="text-center py-4 text-muted">Нет операций</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
 <div class="modal fade" id="addTransactionModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow">
         <div class="modal-header border-0"><h5 class="modal-title fw-bold">Новая операция</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
         <div class="modal-body"><form method="POST">
-            <div class="mb-3"><select name="type" class="form-select form-select-lg"><option value="income">💰 Доход (+)</option><option value="expense">📤 Расход (-)</option></select></div>
+            <div class="mb-3"><select name="type" class="form-select form-select-lg"><option value="income"> Доход (+)</option><option value="expense">📤 Расход (-)</option></select></div>
             <div class="mb-3"><input type="number" name="amount" class="form-control form-control-lg" placeholder="0.00"></div>
             <div class="mb-3"><input type="text" name="category" class="form-control form-control-lg" placeholder="Категория"></div>
             <button type="submit" class="btn btn-primary w-100 py-2">Сохранить</button>
         </form></div>
     </div></div>
-</div>
-
-<div class="mt-5">
-    <h4 class="fw-bold mb-3">История операций</h4>
-    <div class="card p-0 overflow-hidden">
-        <table class="table table-hover mb-0">
-            <thead class="bg-light"><tr><th class="ps-4">Дата</th><th>Категория</th><th>Тип</th><th>Сумма</th><th></th></tr></thead>
-            <tbody>
-                {% for t in transactions %}
-                <tr><td class="ps-4 text-muted">{{ t.date.strftime('%d.%m') }}</td><td class="fw-bold">{{ t.category }}</td><td><span class="badge {{ 'bg-success-subtle text-success' if t.type=='income' else 'bg-danger-subtle text-danger' }}">{{ 'Доход' if t.type=='income' else 'Расход' }}</span></td><td class="fw-bold {{ 'text-success' if t.type=='income' else 'text-danger' }}">{{ '+' if t.type=='income' else '-' }}{{ t.amount }} ₽</td><td><a href="{{ url_for('delete_transaction', id=t.id) }}" class="text-muted">🗑</a></td></tr>
-                {% else %}<tr><td colspan="5" class="text-center py-4 text-muted">Нет операций</td></tr>{% endfor %}
-            </tbody>
-        </table>
-    </div>
 </div>
 
 <script>
@@ -238,7 +357,148 @@ function togglePaymentDay() {
     document.getElementById('weekdayBlock').style.display = freq === 'biweekly' ? 'block' : 'none';
 }
 
+// === ПОИСК И ФИЛЬТРАЦИЯ ===
+let currentSortOrder = 'newest';
+
+function toggleFilters() {
+    const panel = document.getElementById('filterPanel');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+function setSortOrder(order) {
+    currentSortOrder = order;
+    document.getElementById('sortNewest').classList.toggle('active', order === 'newest');
+    document.getElementById('sortOldest').classList.toggle('active', order === 'oldest');
+    document.getElementById('sortAmount').classList.toggle('active', order === 'amount');
+    applyFilters();
+}
+
+async function loadCategories() {
+    try {
+        const response = await fetch('/api/statistics/categories');
+        const data = await response.json();
+        const select = document.getElementById('filterCategory');
+        data.categories.forEach(cat => {
+            const option = document.createElement('option');
+            option.value = cat;
+            option.textContent = cat;
+            select.appendChild(option);
+        });
+    } catch (e) {
+        console.error('Ошибка загрузки категорий:', e);
+    }
+}
+
+async function applyFilters() {
+    const params = new URLSearchParams({
+        search: document.getElementById('filterSearch').value,
+        type: document.getElementById('filterType').value,
+        category: document.getElementById('filterCategory').value,
+        date_from: document.getElementById('filterDateFrom').value,
+        date_to: document.getElementById('filterDateTo').value,
+        min_amount: document.getElementById('filterMinAmount').value,
+        max_amount: document.getElementById('filterMaxAmount').value,
+        sort: currentSortOrder
+    });
+    
+    try {
+        const response = await fetch(`/api/search/transactions?${params}`);
+        const data = await response.json();
+        renderTransactions(data.transactions);
+        document.getElementById('filterResultsInfo').textContent = 
+            `Найдено операций: ${data.total}`;
+    } catch (e) {
+        console.error('Ошибка фильтрации:', e);
+    }
+}
+
+function renderTransactions(transactions) {
+    const tbody = document.getElementById('transactionsTableBody');
+    
+    if (transactions.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">Операции не найдены</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = transactions.map(t => `
+        <tr>
+            <td class="ps-4 text-muted">${t.date}</td>
+            <td class="fw-bold">${t.category}</td>
+            <td><span class="badge ${t.type === 'income' ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'}">${t.type === 'income' ? 'Доход' : 'Расход'}</span></td>
+            <td class="fw-bold ${t.type === 'income' ? 'text-success' : 'text-danger'}">${t.type === 'income' ? '+' : '-'}${t.amount} ₽</td>
+            <td><a href="/delete_trans/${t.id}" class="text-muted"></a></td>
+        </tr>
+    `).join('');
+}
+
+function resetFilters() {
+    document.getElementById('filterSearch').value = '';
+    document.getElementById('filterType').value = '';
+    document.getElementById('filterCategory').value = '';
+    document.getElementById('filterDateFrom').value = '';
+    document.getElementById('filterDateTo').value = '';
+    document.getElementById('filterMinAmount').value = '';
+    document.getElementById('filterMaxAmount').value = '';
+    applyFilters();
+}
+
+// === ПОИСК КРЕДИТОВ ===
+let creditSearchTimeout;
+document.getElementById('creditSearchInput').addEventListener('input', function(e) {
+    clearTimeout(creditSearchTimeout);
+    creditSearchTimeout = setTimeout(() => searchCredits(e.target.value), 300);
+});
+
+async function searchCredits(query) {
+    if (!query.trim()) {
+        document.getElementById('creditSearchResults').style.display = 'none';
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/search/credits?search=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        
+        const resultsDiv = document.getElementById('creditSearchResults');
+        if (data.credits.length === 0) {
+            resultsDiv.innerHTML = '<div class="text-muted small">Кредиты не найдены</div>';
+        } else {
+            resultsDiv.innerHTML = `
+                <div class="list-group">
+                    ${data.credits.map(c => `
+                        <a href="#collapse${c.id}" class="list-group-item list-group-item-action" 
+                           data-bs-toggle="collapse" onclick="openCredit(${c.id})">
+                            <div class="d-flex justify-content-between">
+                                <strong>${c.name}</strong>
+                                <span class="text-muted">Остаток: ${c.remaining_debt} ₽</span>
+                            </div>
+                            <small class="text-muted">Взято: ${c.total_amount} ₽ | Ставка: ${c.interest_rate}%</small>
+                        </a>
+                    `).join('')}
+                </div>
+                <small class="text-muted mt-2 d-block">Найдено: ${data.total}</small>
+            `;
+        }
+        resultsDiv.style.display = 'block';
+    } catch (e) {
+        console.error('Ошибка поиска кредитов:', e);
+    }
+}
+
+function openCredit(id) {
+    document.getElementById('creditSearchResults').style.display = 'none';
+    document.getElementById('creditSearchInput').value = '';
+}
+
+function resetCreditSearch() {
+    document.getElementById('creditSearchInput').value = '';
+    document.getElementById('creditSearchResults').style.display = 'none';
+}
+
+// === ГРАФИКИ ===
 document.addEventListener('DOMContentLoaded', function() {
+    loadCategories();
+    
     const chartData = {{ chart_data | tojson }};
     const colors = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#8B5CF6', '#EC4899', '#14B8A6'];
 
