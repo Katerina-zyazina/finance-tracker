@@ -95,16 +95,62 @@ class Deposit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     bank_name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.String(100), nullable=False)
+    
+    # Тип вклада
+    deposit_type = db.Column(db.String(50), default='срочный')  # срочный, бессрочный, валютный, индексируемый, накопительный
+    
+    # Опции
+    is_replenishable = db.Column(db.Boolean, default=False)  # пополняемый
+    has_partial_withdrawal = db.Column(db.Boolean, default=False)  # с частичным снятием
+    has_capitalization = db.Column(db.Boolean, default=False)  # с капитализацией
+    
+    # Валюта
+    currency = db.Column(db.String(10), default='RUB')  # RUB, USD, EUR, CNY
+    
+    # Параметры
     amount = db.Column(db.Float, nullable=False)
     interest_rate = db.Column(db.Float, nullable=False)
     term_months = db.Column(db.Integer, nullable=False)
-    date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
+    
+    # Начисление процентов
+    compounding_frequency = db.Column(db.String(20), default='monthly')  # daily, monthly, quarterly, yearly, at_maturity
+    last_interest_date = db.Column(db.DateTime, default=datetime.utcnow)
+    total_interest_earned = db.Column(db.Float, default=0.0)
+    
+    date_created = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
     @property
-    def total_profit(self): return self.amount * (self.interest_rate / 100) * (self.term_months / 12)
+    def current_amount(self):
+        """Текущая сумма с учётом начисленных процентов"""
+        return self.amount + self.total_interest_earned
+
     @property
-    def total_amount_end(self): return self.amount + self.total_profit
+    def total_profit(self):
+        """Общий доход за весь срок"""
+        if self.has_capitalization:
+            if self.compounding_frequency == 'daily':
+                periods = self.term_months * 30
+                rate_per_period = self.interest_rate / 100 / 365
+            elif self.compounding_frequency == 'monthly':
+                periods = self.term_months
+                rate_per_period = self.interest_rate / 100 / 12
+            elif self.compounding_frequency == 'quarterly':
+                periods = self.term_months // 3
+                rate_per_period = self.interest_rate / 100 / 4
+            elif self.compounding_frequency == 'yearly':
+                periods = self.term_months // 12
+                rate_per_period = self.interest_rate / 100
+            else:
+                return self.amount * (self.interest_rate / 100) * (self.term_months / 12)
+            
+            return self.amount * ((1 + rate_per_period) ** periods - 1)
+        else:
+            return self.amount * (self.interest_rate / 100) * (self.term_months / 12)
+
+    @property
+    def total_amount_end(self):
+        return self.amount + self.total_profit
 
 class DebtOwed(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -145,6 +191,38 @@ def add_months(source_date, months):
 
 def add_weeks(source_date, weeks):
     return source_date + timedelta(weeks=weeks)
+
+def calculate_and_apply_interest(deposit):
+    """Начисляет проценты на вклад"""
+    today = datetime.utcnow()
+    last_date = deposit.last_interest_date or deposit.date_created
+    
+    if deposit.compounding_frequency == 'daily':
+        days_passed = (today - last_date).days
+        if days_passed > 0:
+            daily_rate = deposit.interest_rate / 100 / 365
+            if deposit.has_capitalization:
+                interest = deposit.amount * ((1 + daily_rate) ** days_passed - 1)
+            else:
+                interest = deposit.amount * daily_rate * days_passed
+            
+            deposit.total_interest_earned += interest
+            deposit.last_interest_date = today
+            return interest
+    elif deposit.compounding_frequency == 'monthly':
+        months_passed = (today.year - last_date.year) * 12 + (today.month - last_date.month)
+        if months_passed > 0:
+            monthly_rate = deposit.interest_rate / 100 / 12
+            if deposit.has_capitalization:
+                interest = deposit.amount * ((1 + monthly_rate) ** months_passed - 1)
+            else:
+                interest = deposit.amount * monthly_rate * months_passed
+            
+            deposit.total_interest_earned += interest
+            deposit.last_interest_date = today
+            return interest
+    
+    return 0
 
 def generate_payment_schedule(credit):
     for p in credit.payments:
@@ -229,7 +307,6 @@ def get_chart_data(user_id):
     }
 
 def get_recommendations(user_id):
-    """Генерирует персональные финансовые рекомендации"""
     recommendations = []
     
     transactions = Transaction.query.filter_by(user_id=user_id).all()
@@ -374,6 +451,20 @@ def logout():
 @login_required
 def dashboard():
     user_id = session['user_id']
+    
+    # Автоматическое начисление процентов по всем вкладам
+    deposits = Deposit.query.filter_by(user_id=user_id).all()
+    for deposit in deposits:
+        interest = calculate_and_apply_interest(deposit)
+        if interest > 0:
+            trans = Transaction(
+                amount=interest,
+                category=f"Проценты: {deposit.bank_name}",
+                type='income',
+                user_id=user_id
+            )
+            db.session.add(trans)
+    db.session.commit()
 
     if request.method == 'POST' and 'amount' in request.form and 'credit_name' not in request.form and 'bank_name' not in request.form and 'debtor_name' not in request.form and 'service_name' not in request.form and 'payment_id' not in request.form and 'payment_day' not in request.form and 'extra_credit_id' not in request.form:
         try:
@@ -492,12 +583,47 @@ def dashboard():
 
     if request.method == 'POST' and 'bank_name' in request.form:
         try:
-            bank, desc = request.form.get('bank_name'), request.form.get('description')
-            amount, rate, term = float(request.form.get('amount')), float(request.form.get('interest_rate')), int(request.form.get('term_months'))
-            db.session.add(Deposit(bank_name=bank, description=desc, amount=amount, interest_rate=rate, term_months=term, user_id=user_id))
+            bank = request.form.get('bank_name')
+            desc = request.form.get('description')
+            amount = float(request.form.get('amount'))
+            rate = float(request.form.get('interest_rate'))
+            term = int(request.form.get('term_months'))
+            deposit_type = request.form.get('deposit_type', 'срочный')
+            currency = request.form.get('currency', 'RUB')
+            compounding = request.form.get('compounding_frequency', 'monthly')
+            is_replenishable = 'is_replenishable' in request.form
+            has_partial_withdrawal = 'has_partial_withdrawal' in request.form
+            has_capitalization = 'has_capitalization' in request.form
+            
+            new_deposit = Deposit(
+                bank_name=bank,
+                description=desc,
+                amount=amount,
+                interest_rate=rate,
+                term_months=term,
+                deposit_type=deposit_type,
+                currency=currency,
+                compounding_frequency=compounding,
+                is_replenishable=is_replenishable,
+                has_partial_withdrawal=has_partial_withdrawal,
+                has_capitalization=has_capitalization,
+                user_id=user_id
+            )
+            db.session.add(new_deposit)
+            
+            trans = Transaction(
+                amount=amount,
+                category=f"Вклад: {bank}",
+                type='expense',
+                user_id=user_id
+            )
+            db.session.add(trans)
+            
             db.session.commit()
-            flash('Вклад открыт!', 'success')
-        except Exception as e: flash('Ошибка: ' + str(e), 'danger')
+            flash(f'Вклад "{bank}" на {amount} {currency} открыт! Сумма вычтена из баланса.', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
     if request.method == 'POST' and 'debtor_name' in request.form:
@@ -540,6 +666,7 @@ def dashboard():
                 upcoming_payments += p.amount_due
 
     total_debts_owed = sum(d.amount for d in debts if not d.is_paid)
+    total_deposits_balance = sum(d.current_amount for d in deposits)
     chart_data = get_chart_data(user_id)
     recommendations = get_recommendations(user_id)
 
@@ -548,14 +675,14 @@ def dashboard():
                            credits=credits, deposits=deposits, debts=debts, subscriptions=subscriptions,
                            upcoming_payments=upcoming_payments, total_subscriptions=subscriptions_total,
                            total_debts_owed=total_debts_owed, now=datetime.utcnow(), 
-                           chart_data=chart_data, recommendations=recommendations)
+                           chart_data=chart_data, recommendations=recommendations,
+                           total_deposits_balance=total_deposits_balance)
 
 # ================= ПОИСК И ФИЛЬТРАЦИЯ =================
 
 @app.route('/api/search/transactions')
 @login_required
 def search_transactions():
-    """API для фильтрации транзакций"""
     user_id = session['user_id']
     
     trans_type = request.args.get('type', '')
@@ -619,7 +746,6 @@ def search_transactions():
 @app.route('/api/search/credits')
 @login_required
 def search_credits():
-    """API для поиска кредитов"""
     user_id = session['user_id']
     search = request.args.get('search', '').strip()
     
@@ -647,7 +773,6 @@ def search_credits():
 @app.route('/api/search/deposits')
 @login_required
 def search_deposits():
-    """API для поиска вкладов"""
     user_id = session['user_id']
     search = request.args.get('search', '').strip()
     
@@ -671,9 +796,10 @@ def search_deposits():
             'bank_name': d.bank_name,
             'description': d.description,
             'amount': d.amount,
+            'current_amount': d.current_amount,
             'interest_rate': d.interest_rate,
             'term_months': d.term_months,
-            'total_amount_end': d.total_amount_end
+            'deposit_type': d.deposit_type
         })
     
     return {'deposits': result, 'total': len(result)}
@@ -681,7 +807,6 @@ def search_deposits():
 @app.route('/api/search/debts')
 @login_required
 def search_debts():
-    """API для поиска долгов"""
     user_id = session['user_id']
     search = request.args.get('search', '').strip()
     
@@ -713,7 +838,6 @@ def search_debts():
 @app.route('/api/search/subscriptions')
 @login_required
 def search_subscriptions():
-    """API для поиска подписок"""
     user_id = session['user_id']
     search = request.args.get('search', '').strip()
     
@@ -745,7 +869,6 @@ def search_subscriptions():
 @app.route('/api/statistics/categories')
 @login_required
 def get_categories():
-    """API для получения списка категорий"""
     user_id = session['user_id']
     
     categories = db.session.query(Transaction.category).filter_by(
@@ -794,6 +917,16 @@ def delete_extra_payment(id):
         flash('Досрочный платёж удалён.', 'info')
     return redirect(url_for('dashboard'))
 
+@app.route('/delete_deposit/<int:id>')
+@login_required
+def delete_deposit(id):
+    d = Deposit.query.get_or_404(id)
+    if d.user_id == session['user_id']:
+        db.session.delete(d)
+        db.session.commit()
+        flash('Вклад удалён.', 'info')
+    return redirect(url_for('dashboard'))
+
 @app.route('/delete_credit/<int:id>')
 @login_required
 def delete_credit(id):
@@ -803,13 +936,6 @@ def delete_credit(id):
         for ep in c.extra_payments: db.session.delete(ep)
         db.session.delete(c)
         db.session.commit()
-    return redirect(url_for('dashboard'))
-
-@app.route('/delete_deposit/<int:id>')
-@login_required
-def delete_deposit(id):
-    d = Deposit.query.get_or_404(id)
-    if d.user_id == session['user_id']: db.session.delete(d); db.session.commit()
     return redirect(url_for('dashboard'))
 
 @app.route('/delete_debt/<int:id>')
