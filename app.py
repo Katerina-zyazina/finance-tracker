@@ -555,26 +555,18 @@ def dashboard():
 @app.route('/api/search/transactions')
 @login_required
 def search_transactions():
-    """API для поиска и фильтрации транзакций"""
+    """API для фильтрации транзакций"""
     user_id = session['user_id']
     
-    search = request.args.get('search', '').strip()
     trans_type = request.args.get('type', '')
     date_from = request.args.get('date_from', '')
     date_to = request.args.get('date_to', '')
     min_amount = request.args.get('min_amount', type=float)
     max_amount = request.args.get('max_amount', type=float)
     category = request.args.get('category', '')
+    sort = request.args.get('sort', 'newest')
     
     query = Transaction.query.filter_by(user_id=user_id)
-    
-    if search:
-        search_pattern = f'%{search}%'
-        query = query.filter(
-            db.or_(
-                Transaction.category.ilike(search_pattern),
-            )
-        )
     
     if trans_type:
         query = query.filter_by(type=trans_type)
@@ -602,7 +594,12 @@ def search_transactions():
     if max_amount is not None:
         query = query.filter(Transaction.amount <= max_amount)
     
-    query = query.order_by(Transaction.date.desc())
+    if sort == 'newest':
+        query = query.order_by(Transaction.date.desc())
+    elif sort == 'oldest':
+        query = query.order_by(Transaction.date.asc())
+    elif sort == 'amount':
+        query = query.order_by(Transaction.amount.desc())
     
     transactions = query.all()
     

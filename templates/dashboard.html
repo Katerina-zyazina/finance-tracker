@@ -64,7 +64,6 @@
 
 <div class="tab-content">
     
-    <!-- КРЕДИТЫ -->
     <div class="tab-pane fade show active" id="tab-credits">
         <div class="card p-4 mb-4 border-start border-4 border-primary">
             <h5 class="fw-bold mb-3">Новый кредит / Рассрочка</h5>
@@ -83,7 +82,6 @@
             </form>
         </div>
 
-        <!-- Поиск кредитов -->
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-body p-3">
                 <h6 class="fw-bold mb-3">🔍 Поиск кредитов</h6>
@@ -175,7 +173,6 @@
         </div>
     </div>
 
-    <!-- ВКЛАДЫ -->
     <div class="tab-pane fade" id="tab-deposits">
         <div class="card p-4 mb-4"><form method="POST" class="row g-3">
             <div class="col-md-3"><input type="text" name="bank_name" class="form-control" placeholder="Банк"></div>
@@ -186,7 +183,6 @@
             <div class="col-md-1"><button type="submit" class="btn btn-success w-100">+</button></div>
         </form></div>
 
-        <!-- Поиск вкладов -->
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-body p-3">
                 <h6 class="fw-bold mb-3">🔍 Поиск вкладов</h6>
@@ -234,7 +230,6 @@
         </div>
     </div>
 
-    <!-- ДОЛГИ МНЕ -->
     <div class="tab-pane fade" id="tab-debts">
         <div class="card p-4 mb-4"><form method="POST" class="row g-3">
             <div class="col-md-3"><input type="text" name="debtor_name" class="form-control" placeholder="Кто должен?"></div>
@@ -243,7 +238,6 @@
             <div class="col-md-1"><button type="submit" class="btn btn-warning text-white w-100">+</button></div>
         </form></div>
 
-        <!-- Поиск долгов -->
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-body p-3">
                 <h6 class="fw-bold mb-3">🔍 Поиск долгов</h6>
@@ -283,7 +277,6 @@
         </div>
     </div>
 
-    <!-- ПОДПИСКИ -->
     <div class="tab-pane fade" id="tab-subs">
         <div class="card p-4 mb-4"><form method="POST" class="row g-3">
             <div class="col-md-3"><input type="text" name="service_name" class="form-control" placeholder="Сервис"></div>
@@ -293,7 +286,6 @@
             <div class="col-md-1"><button type="submit" class="btn btn-info text-white w-100">+</button></div>
         </form></div>
 
-        <!-- Поиск подписок -->
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-body p-3">
                 <h6 class="fw-bold mb-3">🔍 Поиск подписок</h6>
@@ -334,7 +326,7 @@
 
 </div>
 
-<!-- 🔍 ПОИСК И ФИЛЬТРАЦИЯ ТРАНЗАКЦИЙ -->
+<!-- 🔍 ФИЛЬТРАЦИЯ ТРАНЗАКЦИЙ -->
 <div class="mt-5">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="fw-bold mb-0">📋 История операций</h4>
@@ -346,29 +338,20 @@
     <!-- Панель фильтров (скрыта по умолчанию) -->
     <div class="card border-0 shadow-sm mb-4" id="filterPanel" style="display:none;">
         <div class="card-body p-3">
-            <h6 class="fw-bold mb-3">🔍 Поиск и фильтрация</h6>
+            <h6 class="fw-bold mb-3">🔍 Фильтрация операций</h6>
             <div class="row g-3">
-                <!-- Поиск по тексту -->
-                <div class="col-md-4">
-                    <label class="form-label small text-muted">Поиск по категории</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-0"><i class="bi bi-search text-muted"></i></span>
-                        <input type="text" class="form-control border-0 bg-light" id="filterSearch" placeholder="Например: кофе, зарплата...">
-                    </div>
-                </div>
-                
                 <!-- Тип операции -->
-                <div class="col-md-2">
-                    <label class="form-label small text-muted">Тип</label>
+                <div class="col-md-3">
+                    <label class="form-label small text-muted">Тип операции</label>
                     <select class="form-select" id="filterType">
                         <option value="">Все типы</option>
-                        <option value="income"> Доходы</option>
+                        <option value="income">💰 Доходы</option>
                         <option value="expense">📤 Расходы</option>
                     </select>
                 </div>
                 
                 <!-- Категория -->
-                <div class="col-md-2">
+                <div class="col-md-3">
                     <label class="form-label small text-muted">Категория</label>
                     <select class="form-select" id="filterCategory">
                         <option value="">Все категории</option>
@@ -405,7 +388,7 @@
                         <i class="bi bi-funnel-fill me-1"></i> Применить
                     </button>
                     <button class="btn btn-outline-secondary" onclick="resetFilters()">
-                        <i class="bi bi-arrow-counterclockwise"></i>
+                        <i class="bi bi-arrow-counterclockwise"></i> Сбросить
                     </button>
                 </div>
             </div>
@@ -437,7 +420,7 @@
                     <td class="fw-bold">{{ t.category }}</td>
                     <td><span class="badge {{ 'bg-success-subtle text-success' if t.type=='income' else 'bg-danger-subtle text-danger' }}">{{ 'Доход' if t.type=='income' else 'Расход' }}</span></td>
                     <td class="fw-bold {{ 'text-success' if t.type=='income' else 'text-danger' }}">{{ '+' if t.type=='income' else '-' }}{{ t.amount }} ₽</td>
-                    <td><a href="{{ url_for('delete_transaction', id=t.id) }}" class="text-muted"></a></td>
+                    <td><a href="{{ url_for('delete_transaction', id=t.id) }}" class="text-muted">🗑</a></td>
                 </tr>
                 {% else %}
                 <tr><td colspan="5" class="text-center py-4 text-muted">Нет операций</td></tr>
@@ -451,7 +434,7 @@
     <div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow">
         <div class="modal-header border-0"><h5 class="modal-title fw-bold">Новая операция</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
         <div class="modal-body"><form method="POST">
-            <div class="mb-3"><select name="type" class="form-select form-select-lg"><option value="income"> Доход (+)</option><option value="expense">📤 Расход (-)</option></select></div>
+            <div class="mb-3"><select name="type" class="form-select form-select-lg"><option value="income">💰 Доход (+)</option><option value="expense">📤 Расход (-)</option></select></div>
             <div class="mb-3"><input type="number" name="amount" class="form-control form-control-lg" placeholder="0.00"></div>
             <div class="mb-3"><input type="text" name="category" class="form-control form-control-lg" placeholder="Категория"></div>
             <button type="submit" class="btn btn-primary w-100 py-2">Сохранить</button>
@@ -466,7 +449,7 @@ function togglePaymentDay() {
     document.getElementById('weekdayBlock').style.display = freq === 'biweekly' ? 'block' : 'none';
 }
 
-// === ПОИСК И ФИЛЬТРАЦИЯ ТРАНЗАКЦИЙ ===
+// === ФИЛЬТРАЦИЯ ТРАНЗАКЦИЙ ===
 let currentSortOrder = 'newest';
 
 function toggleFilters() {
@@ -500,7 +483,6 @@ async function loadCategories() {
 
 async function applyFilters() {
     const params = new URLSearchParams({
-        search: document.getElementById('filterSearch').value,
         type: document.getElementById('filterType').value,
         category: document.getElementById('filterCategory').value,
         date_from: document.getElementById('filterDateFrom').value,
@@ -535,13 +517,12 @@ function renderTransactions(transactions) {
             <td class="fw-bold">${t.category}</td>
             <td><span class="badge ${t.type === 'income' ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'}">${t.type === 'income' ? 'Доход' : 'Расход'}</span></td>
             <td class="fw-bold ${t.type === 'income' ? 'text-success' : 'text-danger'}">${t.type === 'income' ? '+' : '-'}${t.amount} ₽</td>
-            <td><a href="/delete_trans/${t.id}" class="text-muted"></a></td>
+            <td><a href="/delete_trans/${t.id}" class="text-muted">🗑</a></td>
         </tr>
     `).join('');
 }
 
 function resetFilters() {
-    document.getElementById('filterSearch').value = '';
     document.getElementById('filterType').value = '';
     document.getElementById('filterCategory').value = '';
     document.getElementById('filterDateFrom').value = '';
