@@ -647,6 +647,104 @@ def search_credits():
     
     return {'credits': result, 'total': len(result)}
 
+@app.route('/api/search/deposits')
+@login_required
+def search_deposits():
+    """API для поиска вкладов"""
+    user_id = session['user_id']
+    search = request.args.get('search', '').strip()
+    
+    query = Deposit.query.filter_by(user_id=user_id)
+    
+    if search:
+        search_pattern = f'%{search}%'
+        query = query.filter(
+            db.or_(
+                Deposit.bank_name.ilike(search_pattern),
+                Deposit.description.ilike(search_pattern)
+            )
+        )
+    
+    deposits = query.all()
+    
+    result = []
+    for d in deposits:
+        result.append({
+            'id': d.id,
+            'bank_name': d.bank_name,
+            'description': d.description,
+            'amount': d.amount,
+            'interest_rate': d.interest_rate,
+            'term_months': d.term_months,
+            'total_amount_end': d.total_amount_end
+        })
+    
+    return {'deposits': result, 'total': len(result)}
+
+@app.route('/api/search/debts')
+@login_required
+def search_debts():
+    """API для поиска долгов"""
+    user_id = session['user_id']
+    search = request.args.get('search', '').strip()
+    
+    query = DebtOwed.query.filter_by(user_id=user_id)
+    
+    if search:
+        search_pattern = f'%{search}%'
+        query = query.filter(
+            db.or_(
+                DebtOwed.debtor_name.ilike(search_pattern),
+                DebtOwed.description.ilike(search_pattern)
+            )
+        )
+    
+    debts = query.all()
+    
+    result = []
+    for d in debts:
+        result.append({
+            'id': d.id,
+            'debtor_name': d.debtor_name,
+            'amount': d.amount,
+            'description': d.description,
+            'is_paid': d.is_paid
+        })
+    
+    return {'debts': result, 'total': len(result)}
+
+@app.route('/api/search/subscriptions')
+@login_required
+def search_subscriptions():
+    """API для поиска подписок"""
+    user_id = session['user_id']
+    search = request.args.get('search', '').strip()
+    
+    query = Subscription.query.filter_by(user_id=user_id)
+    
+    if search:
+        search_pattern = f'%{search}%'
+        query = query.filter(
+            db.or_(
+                Subscription.service_name.ilike(search_pattern),
+                Subscription.plan_name.ilike(search_pattern)
+            )
+        )
+    
+    subscriptions = query.all()
+    
+    result = []
+    for s in subscriptions:
+        result.append({
+            'id': s.id,
+            'service_name': s.service_name,
+            'plan_name': s.plan_name,
+            'cost': s.cost,
+            'billing_cycle': s.billing_cycle
+        })
+    
+    return {'subscriptions': result, 'total': len(result)}
+
 @app.route('/api/statistics/categories')
 @login_required
 def get_categories():
