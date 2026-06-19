@@ -95,39 +95,26 @@ class Deposit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     bank_name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.String(100), nullable=False)
-    
-    # Тип вклада
-    deposit_type = db.Column(db.String(50), default='срочный')  # срочный, бессрочный, валютный, индексируемый, накопительный
-    
-    # Опции
-    is_replenishable = db.Column(db.Boolean, default=False)  # пополняемый
-    has_partial_withdrawal = db.Column(db.Boolean, default=False)  # с частичным снятием
-    has_capitalization = db.Column(db.Boolean, default=False)  # с капитализацией
-    
-    # Валюта
-    currency = db.Column(db.String(10), default='RUB')  # RUB, USD, EUR, CNY
-    
-    # Параметры
+    deposit_type = db.Column(db.String(50), default='срочный')
+    is_replenishable = db.Column(db.Boolean, default=False)
+    has_partial_withdrawal = db.Column(db.Boolean, default=False)
+    has_capitalization = db.Column(db.Boolean, default=False)
+    currency = db.Column(db.String(10), default='RUB')
     amount = db.Column(db.Float, nullable=False)
     interest_rate = db.Column(db.Float, nullable=False)
     term_months = db.Column(db.Integer, nullable=False)
-    
-    # Начисление процентов
-    compounding_frequency = db.Column(db.String(20), default='monthly')  # daily, monthly, quarterly, yearly, at_maturity
+    compounding_frequency = db.Column(db.String(20), default='monthly')
     last_interest_date = db.Column(db.DateTime, default=datetime.utcnow)
     total_interest_earned = db.Column(db.Float, default=0.0)
-    
     date_created = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
     @property
     def current_amount(self):
-        """Текущая сумма с учётом начисленных процентов"""
         return self.amount + self.total_interest_earned
 
     @property
     def total_profit(self):
-        """Общий доход за весь срок"""
         if self.has_capitalization:
             if self.compounding_frequency == 'daily':
                 periods = self.term_months * 30
@@ -143,7 +130,6 @@ class Deposit(db.Model):
                 rate_per_period = self.interest_rate / 100
             else:
                 return self.amount * (self.interest_rate / 100) * (self.term_months / 12)
-            
             return self.amount * ((1 + rate_per_period) ** periods - 1)
         else:
             return self.amount * (self.interest_rate / 100) * (self.term_months / 12)
@@ -164,9 +150,9 @@ class DebtOwed(db.Model):
 class Subscription(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     service_name = db.Column(db.String(100), nullable=False)
-    plan_name = db.Column(db.String(100), nullable=False)
     cost = db.Column(db.Float, nullable=False)
     billing_cycle = db.Column(db.String(20), default="monthly")
+    next_payment_date = db.Column(db.DateTime, nullable=False)
     is_active = db.Column(db.Boolean, default=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
@@ -193,7 +179,6 @@ def add_weeks(source_date, weeks):
     return source_date + timedelta(weeks=weeks)
 
 def calculate_and_apply_interest(deposit):
-    """Начисляет проценты на вклад"""
     today = datetime.utcnow()
     last_date = deposit.last_interest_date or deposit.date_created
     
@@ -205,7 +190,6 @@ def calculate_and_apply_interest(deposit):
                 interest = deposit.amount * ((1 + daily_rate) ** days_passed - 1)
             else:
                 interest = deposit.amount * daily_rate * days_passed
-            
             deposit.total_interest_earned += interest
             deposit.last_interest_date = today
             return interest
@@ -217,11 +201,9 @@ def calculate_and_apply_interest(deposit):
                 interest = deposit.amount * ((1 + monthly_rate) ** months_passed - 1)
             else:
                 interest = deposit.amount * monthly_rate * months_passed
-            
             deposit.total_interest_earned += interest
             deposit.last_interest_date = today
             return interest
-    
     return 0
 
 def generate_payment_schedule(credit):
@@ -247,7 +229,6 @@ def generate_payment_schedule(credit):
     
     while remaining_balance > 0 and payment_count < max_payments:
         payment_amount = min(credit.monthly_payment_fixed, remaining_balance)
-        
         payment_record = CreditPayment(
             credit_id=credit.id,
             due_date=current_date,
@@ -256,14 +237,12 @@ def generate_payment_schedule(credit):
             is_paid=False
         )
         db.session.add(payment_record)
-        
         remaining_balance -= payment_amount
         
         if credit.payment_frequency == "biweekly":
             current_date = add_weeks(current_date, 2)
         else:
             current_date = add_months(current_date, 1)
-        
         payment_count += 1
 
 def get_chart_data(user_id):
@@ -308,7 +287,6 @@ def get_chart_data(user_id):
 
 def get_recommendations(user_id):
     recommendations = []
-    
     transactions = Transaction.query.filter_by(user_id=user_id).all()
     credits = Credit.query.filter_by(user_id=user_id).all()
     subscriptions = Subscription.query.filter_by(user_id=user_id, is_active=True).all()
@@ -323,11 +301,6 @@ def get_recommendations(user_id):
             expenses_by_category[t.category] += t.amount
     
     today = datetime.utcnow()
-    upcoming_credit_payments = sum(
-        p.amount_due for c in credits 
-        for p in c.payments 
-        if not p.is_paid and p.due_date >= today and p.due_date < today + timedelta(days=30)
-    )
     
     if income > 0 and balance > 0:
         save_amount = min(balance * 0.2, 10000)
@@ -370,17 +343,17 @@ def get_recommendations(user_id):
             recommendations.append({
                 'icon': '💳',
                 'title': 'Кредитная нагрузка',
-                'text': f'Общий долг по кредитам: {int(total_credit_debt)}₽. Рассмотрите досрочное погашение для экономии на процентах',
+                'text': f'Общий долг по кредитам: {int(total_credit_debt)}₽. Рассмотрите досрочное погашение',
                 'type': 'danger'
             })
     
     if subscriptions:
-        total_subs = sum(s.cost for s in subscriptions)
+        total_subs = sum(s.cost if s.billing_cycle == 'monthly' else s.cost / 12 for s in subscriptions)
         if total_subs > 2000:
             recommendations.append({
                 'icon': '📺',
                 'title': 'Подписки',
-                'text': f'Ежемесячно на подписки уходит {int(total_subs)}₽. Проверь, все ли сервисы ты действительно используешь?',
+                'text': f'Ежемесячно на подписки уходит {int(total_subs)}₽. Проверь, все ли сервисы используешь?',
                 'type': 'warning'
             })
     
@@ -396,21 +369,20 @@ def get_recommendations(user_id):
         recommendations.append({
             'icon': '🐷',
             'title': 'Накопления',
-            'text': 'Попробуй откладывать хотя бы 10% от дохода — через год это даст ощутимый результат',
+            'text': 'Попробуй откладывать хотя бы 10% от дохода',
             'type': 'info'
         })
     
     if len(recommendations) < 2:
         general_tips = [
-            {'icon': '📊', 'title': 'Совет', 'text': 'Веди учёт трат ежедневно — это помогает контролировать бюджет', 'type': 'info'},
-            {'icon': '🎁', 'title': 'Совет', 'text': 'Создай финансовую цель: отпуск, гаджет, обучение — так легче мотивировать себя экономить', 'type': 'success'},
-            {'icon': '🔄', 'title': 'Совет', 'text': 'Раз в месяц пересматривай подписки и кредиты — возможно, найдёшь способ сэкономить', 'type': 'info'},
+            {'icon': '📊', 'title': 'Совет', 'text': 'Веди учёт трат ежедневно', 'type': 'info'},
+            {'icon': '🎁', 'title': 'Совет', 'text': 'Создай финансовую цель', 'type': 'success'},
+            {'icon': '🔄', 'title': 'Совет', 'text': 'Раз в месяц пересматривай подписки', 'type': 'info'},
         ]
         for tip in general_tips:
             if len(recommendations) >= 3:
                 break
-            if tip not in recommendations:
-                recommendations.append(tip)
+            recommendations.append(tip)
     
     return recommendations[:3]
 
@@ -452,17 +424,12 @@ def logout():
 def dashboard():
     user_id = session['user_id']
     
-    # Автоматическое начисление процентов по всем вкладам
+    # Автоматическое начисление процентов
     deposits = Deposit.query.filter_by(user_id=user_id).all()
     for deposit in deposits:
         interest = calculate_and_apply_interest(deposit)
         if interest > 0:
-            trans = Transaction(
-                amount=interest,
-                category=f"Проценты: {deposit.bank_name}",
-                type='income',
-                user_id=user_id
-            )
+            trans = Transaction(amount=interest, category=f"Проценты: {deposit.bank_name}", type='income', user_id=user_id)
             db.session.add(trans)
     db.session.commit()
 
@@ -478,25 +445,23 @@ def dashboard():
 
     if request.method == 'POST' and 'credit_name' in request.form:
         try:
-            name = request.form.get('credit_name')
-            total = float(request.form.get('total_amount'))
-            rate = float(request.form.get('interest_rate'))
-            fixed_payment = float(request.form.get('monthly_payment_fixed'))
-            frequency = request.form.get('payment_frequency', 'monthly')
-            payment_day = int(request.form.get('payment_day', 1))
-            start_month = int(request.form.get('start_month', datetime.utcnow().month))
-            start_year = int(request.form.get('start_year', datetime.utcnow().year))
-            
             new_credit = Credit(
-                name=name, total_amount=total, interest_rate=rate, monthly_payment_fixed=fixed_payment,
-                payment_frequency=frequency, payment_day=payment_day, start_month=start_month, start_year=start_year, user_id=user_id
+                name=request.form.get('credit_name'),
+                total_amount=float(request.form.get('total_amount')),
+                interest_rate=float(request.form.get('interest_rate')),
+                monthly_payment_fixed=float(request.form.get('monthly_payment_fixed')),
+                payment_frequency=request.form.get('payment_frequency', 'monthly'),
+                payment_day=int(request.form.get('payment_day', 1)),
+                start_month=int(request.form.get('start_month', datetime.utcnow().month)),
+                start_year=int(request.form.get('start_year', datetime.utcnow().year)),
+                user_id=user_id
             )
             db.session.add(new_credit)
             db.session.flush()
             generate_payment_schedule(new_credit)
             db.session.commit()
-            flash('Кредит и график платежей созданы!', 'success')
-        except Exception as e: 
+            flash('Кредит создан!', 'success')
+        except Exception as e:
             db.session.rollback()
             flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
@@ -515,26 +480,18 @@ def dashboard():
                 return redirect(url_for('dashboard'))
 
             if paid_amount > credit.remaining_debt + 0.01:
-                flash(f'Нельзя внести {paid_amount} ₽. Остаток долга: {credit.remaining_debt} ₽', 'danger')
+                flash(f'Нельзя внести {paid_amount} ₽. Остаток: {credit.remaining_debt} ₽', 'danger')
                 return redirect(url_for('dashboard'))
 
             payment.amount_paid = paid_amount
             payment.is_paid = True
             payment.note = note
             
-            credit_name = credit.name if credit.name else "Без названия"
-            trans = Transaction(
-                amount=paid_amount, 
-                category=f"Кредит: {credit_name}", 
-                type='expense', 
-                user_id=user_id,
-                payment_ref_id=pay_id
-            )
+            trans = Transaction(amount=paid_amount, category=f"Кредит: {credit.name}", type='expense', user_id=user_id, payment_ref_id=pay_id)
             db.session.add(trans)
-            
             generate_payment_schedule(credit)
             db.session.commit()
-            flash('Платеж внесен! График пересчитан.', 'success')
+            flash('Платёж внесён!', 'success')
         except Exception as e:
             db.session.rollback()
             flash('Ошибка: ' + str(e), 'danger')
@@ -552,30 +509,18 @@ def dashboard():
                 return redirect(url_for('dashboard'))
 
             if extra_amount > credit.remaining_debt + 0.01:
-                flash(f'Нельзя внести {extra_amount} ₽. Остаток долга: {credit.remaining_debt} ₽', 'danger')
+                flash(f'Нельзя внести {extra_amount} ₽. Остаток: {credit.remaining_debt} ₽', 'danger')
                 return redirect(url_for('dashboard'))
 
-            extra_payment = ExtraCreditPayment(
-                credit_id=credit.id,
-                amount=extra_amount,
-                note=extra_note
-            )
+            extra_payment = ExtraCreditPayment(credit_id=credit.id, amount=extra_amount, note=extra_note)
             db.session.add(extra_payment)
             db.session.flush()
             
-            credit_name = credit.name if credit.name else "Без названия"
-            trans = Transaction(
-                amount=extra_amount, 
-                category=f"Досрочно: {credit_name}", 
-                type='expense', 
-                user_id=user_id,
-                extra_payment_ref_id=extra_payment.id
-            )
+            trans = Transaction(amount=extra_amount, category=f"Досрочно: {credit.name}", type='expense', user_id=user_id, extra_payment_ref_id=extra_payment.id)
             db.session.add(trans)
-            
             generate_payment_schedule(credit)
             db.session.commit()
-            flash(f'Досрочный платёж {extra_amount} ₽ внесён! График пересчитан.', 'success')
+            flash(f'Досрочный платёж {extra_amount} ₽ внесён!', 'success')
         except Exception as e:
             db.session.rollback()
             flash('Ошибка: ' + str(e), 'danger')
@@ -583,44 +528,52 @@ def dashboard():
 
     if request.method == 'POST' and 'bank_name' in request.form:
         try:
-            bank = request.form.get('bank_name')
-            desc = request.form.get('description')
-            amount = float(request.form.get('amount'))
-            rate = float(request.form.get('interest_rate'))
-            term = int(request.form.get('term_months'))
-            deposit_type = request.form.get('deposit_type', 'срочный')
-            currency = request.form.get('currency', 'RUB')
-            compounding = request.form.get('compounding_frequency', 'monthly')
-            is_replenishable = 'is_replenishable' in request.form
-            has_partial_withdrawal = 'has_partial_withdrawal' in request.form
-            has_capitalization = 'has_capitalization' in request.form
-            
             new_deposit = Deposit(
-                bank_name=bank,
-                description=desc,
-                amount=amount,
-                interest_rate=rate,
-                term_months=term,
-                deposit_type=deposit_type,
-                currency=currency,
-                compounding_frequency=compounding,
-                is_replenishable=is_replenishable,
-                has_partial_withdrawal=has_partial_withdrawal,
-                has_capitalization=has_capitalization,
+                bank_name=request.form.get('bank_name'),
+                description=request.form.get('description'),
+                amount=float(request.form.get('amount')),
+                interest_rate=float(request.form.get('interest_rate')),
+                term_months=int(request.form.get('term_months')),
+                deposit_type=request.form.get('deposit_type', 'срочный'),
+                currency=request.form.get('currency', 'RUB'),
+                compounding_frequency=request.form.get('compounding_frequency', 'monthly'),
+                is_replenishable='is_replenishable' in request.form,
+                has_partial_withdrawal='has_partial_withdrawal' in request.form,
+                has_capitalization='has_capitalization' in request.form,
                 user_id=user_id
             )
             db.session.add(new_deposit)
+            trans = Transaction(amount=float(request.form.get('amount')), category=f"Вклад: {request.form.get('bank_name')}", type='expense', user_id=user_id)
+            db.session.add(trans)
+            db.session.commit()
+            flash('Вклад открыт!', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash('Ошибка: ' + str(e), 'danger')
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'POST' and 'service_name' in request.form:
+        try:
+            service = request.form.get('service_name')
+            cost = float(request.form.get('cost'))
+            cycle = request.form.get('billing_cycle')
+            next_payment = request.form.get('next_payment_date')
             
-            trans = Transaction(
-                amount=amount,
-                category=f"Вклад: {bank}",
-                type='expense',
+            if not next_payment:
+                next_payment = datetime.utcnow() + timedelta(days=30)
+            else:
+                next_payment = datetime.strptime(next_payment, '%Y-%m-%d')
+            
+            new_sub = Subscription(
+                service_name=service,
+                cost=cost,
+                billing_cycle=cycle,
+                next_payment_date=next_payment,
                 user_id=user_id
             )
-            db.session.add(trans)
-            
+            db.session.add(new_sub)
             db.session.commit()
-            flash(f'Вклад "{bank}" на {amount} {currency} открыт! Сумма вычтена из баланса.', 'success')
+            flash(f'Подписка "{service}" добавлена! Платёж: {next_payment.strftime("%d.%m.%Y")}', 'success')
         except Exception as e:
             db.session.rollback()
             flash('Ошибка: ' + str(e), 'danger')
@@ -628,20 +581,9 @@ def dashboard():
 
     if request.method == 'POST' and 'debtor_name' in request.form:
         try:
-            debtor, amount, desc = request.form.get('debtor_name'), float(request.form.get('amount')), request.form.get('description')
-            db.session.add(DebtOwed(debtor_name=debtor, amount=amount, description=desc, user_id=user_id))
+            db.session.add(DebtOwed(debtor_name=request.form.get('debtor_name'), amount=float(request.form.get('amount')), description=request.form.get('description'), user_id=user_id))
             db.session.commit()
             flash('Долг записан!', 'success')
-        except Exception as e: flash('Ошибка: ' + str(e), 'danger')
-        return redirect(url_for('dashboard'))
-
-    if request.method == 'POST' and 'service_name' in request.form:
-        try:
-            service, plan = request.form.get('service_name'), request.form.get('plan_name')
-            cost, cycle = float(request.form.get('cost')), request.form.get('billing_cycle')
-            db.session.add(Subscription(service_name=service, plan_name=plan, cost=cost, billing_cycle=cycle, user_id=user_id))
-            db.session.commit()
-            flash('Подписка добавлена!', 'success')
         except Exception as e: flash('Ошибка: ' + str(e), 'danger')
         return redirect(url_for('dashboard'))
 
@@ -653,18 +595,20 @@ def dashboard():
 
     income = sum(t.amount for t in transactions if t.type == 'income')
     expense = sum(t.amount for t in transactions if t.type == 'expense')
-    subscriptions_total = sum(s.cost for s in subscriptions)
-    total_expenses = expense + subscriptions_total
+    subscriptions_total_monthly = sum(s.cost if s.billing_cycle == 'monthly' else s.cost / 12 for s in subscriptions)
+    total_expenses = expense + subscriptions_total_monthly
     balance = income - total_expenses
     
     today = datetime.utcnow()
     one_month_later = add_months(today, 1)
-    upcoming_payments = 0
-    for c in credits:
-        for p in c.payments:
-            if not p.is_paid and p.due_date >= today and p.due_date <= one_month_later:
-                upcoming_payments += p.amount_due
-
+    upcoming_payments = sum(p.amount_due for c in credits for p in c.payments if not p.is_paid and today <= p.due_date <= one_month_later)
+    
+    upcoming_subs = []
+    for s in subscriptions:
+        if s.next_payment_date <= one_month_later:
+            upcoming_subs.append({'service': s.service_name, 'cost': s.cost, 'date': s.next_payment_date, 'cycle': s.billing_cycle})
+    upcoming_subs.sort(key=lambda x: x['date'])
+    
     total_debts_owed = sum(d.amount for d in debts if not d.is_paid)
     total_deposits_balance = sum(d.current_amount for d in deposits)
     chart_data = get_chart_data(user_id)
@@ -673,74 +617,45 @@ def dashboard():
     return render_template('dashboard.html', 
                            transactions=transactions, balance=balance, income=income, expense=total_expenses,
                            credits=credits, deposits=deposits, debts=debts, subscriptions=subscriptions,
-                           upcoming_payments=upcoming_payments, total_subscriptions=subscriptions_total,
+                           upcoming_payments=upcoming_payments, total_subscriptions=subscriptions_total_monthly,
                            total_debts_owed=total_debts_owed, now=datetime.utcnow(), 
                            chart_data=chart_data, recommendations=recommendations,
-                           total_deposits_balance=total_deposits_balance)
+                           total_deposits_balance=total_deposits_balance,
+                           subscriptions_total_monthly=subscriptions_total_monthly,
+                           upcoming_subs=upcoming_subs)
 
-# ================= ПОИСК И ФИЛЬТРАЦИЯ =================
+# ================= API ПОИСКА =================
 
 @app.route('/api/search/transactions')
 @login_required
 def search_transactions():
     user_id = session['user_id']
-    
     trans_type = request.args.get('type', '')
+    category = request.args.get('category', '')
     date_from = request.args.get('date_from', '')
     date_to = request.args.get('date_to', '')
     min_amount = request.args.get('min_amount', type=float)
     max_amount = request.args.get('max_amount', type=float)
-    category = request.args.get('category', '')
     sort = request.args.get('sort', 'newest')
     
     query = Transaction.query.filter_by(user_id=user_id)
-    
-    if trans_type:
-        query = query.filter_by(type=trans_type)
-    
-    if category:
-        query = query.filter_by(category=category)
-    
+    if trans_type: query = query.filter_by(type=trans_type)
+    if category: query = query.filter_by(category=category)
     if date_from:
-        try:
-            date_from_dt = datetime.strptime(date_from, '%Y-%m-%d')
-            query = query.filter(Transaction.date >= date_from_dt)
-        except:
-            pass
-    
+        try: query = query.filter(Transaction.date >= datetime.strptime(date_from, '%Y-%m-%d'))
+        except: pass
     if date_to:
-        try:
-            date_to_dt = datetime.strptime(date_to, '%Y-%m-%d')
-            query = query.filter(Transaction.date <= date_to_dt)
-        except:
-            pass
+        try: query = query.filter(Transaction.date <= datetime.strptime(date_to, '%Y-%m-%d'))
+        except: pass
+    if min_amount is not None: query = query.filter(Transaction.amount >= min_amount)
+    if max_amount is not None: query = query.filter(Transaction.amount <= max_amount)
     
-    if min_amount is not None:
-        query = query.filter(Transaction.amount >= min_amount)
-    
-    if max_amount is not None:
-        query = query.filter(Transaction.amount <= max_amount)
-    
-    if sort == 'newest':
-        query = query.order_by(Transaction.date.desc())
-    elif sort == 'oldest':
-        query = query.order_by(Transaction.date.asc())
-    elif sort == 'amount':
-        query = query.order_by(Transaction.amount.desc())
+    if sort == 'newest': query = query.order_by(Transaction.date.desc())
+    elif sort == 'oldest': query = query.order_by(Transaction.date.asc())
+    elif sort == 'amount': query = query.order_by(Transaction.amount.desc())
     
     transactions = query.all()
-    
-    result = []
-    for t in transactions:
-        result.append({
-            'id': t.id,
-            'amount': t.amount,
-            'category': t.category,
-            'type': t.type,
-            'date': t.date.strftime('%d.%m.%Y'),
-            'date_raw': t.date.isoformat()
-        })
-    
+    result = [{'id': t.id, 'amount': t.amount, 'category': t.category, 'type': t.type, 'date': t.date.strftime('%d.%m.%Y')} for t in transactions]
     return {'transactions': result, 'total': len(result)}
 
 @app.route('/api/search/credits')
@@ -748,26 +663,10 @@ def search_transactions():
 def search_credits():
     user_id = session['user_id']
     search = request.args.get('search', '').strip()
-    
     query = Credit.query.filter_by(user_id=user_id)
-    
-    if search:
-        search_pattern = f'%{search}%'
-        query = query.filter(Credit.name.ilike(search_pattern))
-    
+    if search: query = query.filter(Credit.name.ilike(f'%{search}%'))
     credits = query.all()
-    
-    result = []
-    for c in credits:
-        result.append({
-            'id': c.id,
-            'name': c.name,
-            'total_amount': c.total_amount,
-            'remaining_debt': c.remaining_debt,
-            'interest_rate': c.interest_rate,
-            'monthly_payment': c.monthly_payment_fixed
-        })
-    
+    result = [{'id': c.id, 'name': c.name, 'total_amount': c.total_amount, 'remaining_debt': c.remaining_debt, 'interest_rate': c.interest_rate} for c in credits]
     return {'credits': result, 'total': len(result)}
 
 @app.route('/api/search/deposits')
@@ -775,33 +674,10 @@ def search_credits():
 def search_deposits():
     user_id = session['user_id']
     search = request.args.get('search', '').strip()
-    
     query = Deposit.query.filter_by(user_id=user_id)
-    
-    if search:
-        search_pattern = f'%{search}%'
-        query = query.filter(
-            db.or_(
-                Deposit.bank_name.ilike(search_pattern),
-                Deposit.description.ilike(search_pattern)
-            )
-        )
-    
+    if search: query = query.filter(db.or_(Deposit.bank_name.ilike(f'%{search}%'), Deposit.description.ilike(f'%{search}%')))
     deposits = query.all()
-    
-    result = []
-    for d in deposits:
-        result.append({
-            'id': d.id,
-            'bank_name': d.bank_name,
-            'description': d.description,
-            'amount': d.amount,
-            'current_amount': d.current_amount,
-            'interest_rate': d.interest_rate,
-            'term_months': d.term_months,
-            'deposit_type': d.deposit_type
-        })
-    
+    result = [{'id': d.id, 'bank_name': d.bank_name, 'description': d.description, 'amount': d.amount, 'current_amount': d.current_amount, 'deposit_type': d.deposit_type} for d in deposits]
     return {'deposits': result, 'total': len(result)}
 
 @app.route('/api/search/debts')
@@ -809,30 +685,10 @@ def search_deposits():
 def search_debts():
     user_id = session['user_id']
     search = request.args.get('search', '').strip()
-    
     query = DebtOwed.query.filter_by(user_id=user_id)
-    
-    if search:
-        search_pattern = f'%{search}%'
-        query = query.filter(
-            db.or_(
-                DebtOwed.debtor_name.ilike(search_pattern),
-                DebtOwed.description.ilike(search_pattern)
-            )
-        )
-    
+    if search: query = query.filter(db.or_(DebtOwed.debtor_name.ilike(f'%{search}%'), DebtOwed.description.ilike(f'%{search}%')))
     debts = query.all()
-    
-    result = []
-    for d in debts:
-        result.append({
-            'id': d.id,
-            'debtor_name': d.debtor_name,
-            'amount': d.amount,
-            'description': d.description,
-            'is_paid': d.is_paid
-        })
-    
+    result = [{'id': d.id, 'debtor_name': d.debtor_name, 'amount': d.amount, 'description': d.description} for d in debts]
     return {'debts': result, 'total': len(result)}
 
 @app.route('/api/search/subscriptions')
@@ -840,44 +696,18 @@ def search_debts():
 def search_subscriptions():
     user_id = session['user_id']
     search = request.args.get('search', '').strip()
-    
     query = Subscription.query.filter_by(user_id=user_id)
-    
-    if search:
-        search_pattern = f'%{search}%'
-        query = query.filter(
-            db.or_(
-                Subscription.service_name.ilike(search_pattern),
-                Subscription.plan_name.ilike(search_pattern)
-            )
-        )
-    
-    subscriptions = query.all()
-    
-    result = []
-    for s in subscriptions:
-        result.append({
-            'id': s.id,
-            'service_name': s.service_name,
-            'plan_name': s.plan_name,
-            'cost': s.cost,
-            'billing_cycle': s.billing_cycle
-        })
-    
+    if search: query = query.filter(db.or_(Subscription.service_name.ilike(f'%{search}%'), Subscription.service_name.ilike(f'%{search}%')))
+    subs = query.all()
+    result = [{'id': s.id, 'service_name': s.service_name, 'cost': s.cost, 'billing_cycle': s.billing_cycle} for s in subs]
     return {'subscriptions': result, 'total': len(result)}
 
 @app.route('/api/statistics/categories')
 @login_required
 def get_categories():
     user_id = session['user_id']
-    
-    categories = db.session.query(Transaction.category).filter_by(
-        user_id=user_id, type='expense'
-    ).distinct().all()
-    
-    category_list = [cat[0] for cat in categories if cat[0]]
-    
-    return {'categories': sorted(category_list)}
+    categories = db.session.query(Transaction.category).filter_by(user_id=user_id, type='expense').distinct().all()
+    return {'categories': sorted([cat[0] for cat in categories if cat[0]])}
 
 # ================= УДАЛЕНИЯ =================
 
@@ -892,14 +722,11 @@ def delete_transaction(id):
                 payment.is_paid = False
                 payment.amount_paid = 0.0
                 generate_payment_schedule(payment.credit)
-        
         if t.extra_payment_ref_id:
-            extra_payment = ExtraCreditPayment.query.get(t.extra_payment_ref_id)
-            if extra_payment:
-                credit = extra_payment.credit
-                db.session.delete(extra_payment)
-                generate_payment_schedule(credit)
-        
+            extra = ExtraCreditPayment.query.get(t.extra_payment_ref_id)
+            if extra:
+                db.session.delete(extra)
+                generate_payment_schedule(extra.credit)
         db.session.delete(t)
         db.session.commit()
         flash('Операция удалена.', 'info')
@@ -909,10 +736,9 @@ def delete_transaction(id):
 @login_required
 def delete_extra_payment(id):
     extra = ExtraCreditPayment.query.get_or_404(id)
-    credit = extra.credit
-    if credit.user_id == session['user_id']:
+    if extra.credit.user_id == session['user_id']:
         db.session.delete(extra)
-        generate_payment_schedule(credit)
+        generate_payment_schedule(extra.credit)
         db.session.commit()
         flash('Досрочный платёж удалён.', 'info')
     return redirect(url_for('dashboard'))
@@ -931,7 +757,7 @@ def delete_deposit(id):
 @login_required
 def delete_credit(id):
     c = Credit.query.get_or_404(id)
-    if c.user_id == session['user_id']: 
+    if c.user_id == session['user_id']:
         for p in c.payments: db.session.delete(p)
         for ep in c.extra_payments: db.session.delete(ep)
         db.session.delete(c)
@@ -942,14 +768,19 @@ def delete_credit(id):
 @login_required
 def delete_debt(id):
     d = DebtOwed.query.get_or_404(id)
-    if d.user_id == session['user_id']: db.session.delete(d); db.session.commit()
+    if d.user_id == session['user_id']:
+        db.session.delete(d)
+        db.session.commit()
     return redirect(url_for('dashboard'))
 
 @app.route('/delete_sub/<int:id>')
 @login_required
 def delete_subscription(id):
     s = Subscription.query.get_or_404(id)
-    if s.user_id == session['user_id']: db.session.delete(s); db.session.commit()
+    if s.user_id == session['user_id']:
+        db.session.delete(s)
+        db.session.commit()
+        flash('Подписка удалена.', 'info')
     return redirect(url_for('dashboard'))
 
 with app.app_context():

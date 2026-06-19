@@ -15,7 +15,7 @@
 <div class="row g-4 mb-5">
     <div class="col-md-4"><div class="stat-card bg-gradient-success h-100"><h6 class="opacity-75 mb-2">💰 Доходы</h6><h2 class="fw-bold mb-0">{{ income }} ₽</h2></div></div>
     <div class="col-md-4"><div class="stat-card bg-gradient-danger h-100"><h6 class="opacity-75 mb-2">📉 Расходы</h6><h2 class="fw-bold mb-0">{{ expense }} ₽</h2></div></div>
-    <div class="col-md-4"><div class="stat-card bg-gradient-primary h-100"><h6 class="opacity-75 mb-2">💵 Баланс</h6><h2 class="fw-bold mb-0">{{ balance }} ₽</h2></div></div>
+    <div class="col-md-4"><div class="stat-card bg-gradient-primary h-100"><h6 class="opacity-75 mb-2"> Баланс</h6><h2 class="fw-bold mb-0">{{ balance }} ₽</h2></div></div>
 </div>
 
 <div class="row g-3 mb-5">
@@ -53,7 +53,7 @@
     <div class="col-md-6"><div class="card border-0 shadow-sm h-100"><div class="card-header bg-white border-0 pt-4 px-4"><h5 class="fw-bold mb-0">📈 Доходы vs Расходы</h5></div><div class="card-body"><canvas id="incomeExpenseChart" height="250"></canvas></div></div></div>
 </div>
 
-<div class="card border-0 shadow-sm mb-5"><div class="card-header bg-white border-0 pt-4 px-4"><h5 class="fw-bold mb-0">💹 Динамика баланса</h5></div><div class="card-body"><canvas id="balanceChart" height="100"></canvas></div></div>
+<div class="card border-0 shadow-sm mb-5"><div class="card-header bg-white border-0 pt-4 px-4"><h5 class="fw-bold mb-0"> Динамика баланса</h5></div><div class="card-body"><canvas id="balanceChart" height="100"></canvas></div></div>
 
 <ul class="nav nav-pills mb-4 p-1 bg-white rounded-3 shadow-sm d-inline-flex" id="toolsTab" role="tablist">
     <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-credits">💳 Кредиты</button></li>
@@ -74,7 +74,7 @@
                 <div class="col-md-2"><input type="number" step="0.1" name="interest_rate" class="form-control" placeholder="Процент"></div>
                 <div class="col-md-2"><input type="number" step="0.01" name="monthly_payment_fixed" class="form-control" placeholder="Платеж" required></div>
                 <div class="col-md-2 d-flex align-items-end"><button type="submit" class="btn btn-primary w-100 py-2" style="min-width: 150px;">Создать кредит</button></div>
-                <div class="col-12"><hr class="my-3"><h6 class="fw-bold mb-3"> Настройки графика</h6></div>
+                <div class="col-12"><hr class="my-3"><h6 class="fw-bold mb-3">📅 Настройки графика</h6></div>
                 <div class="col-md-3"><select name="payment_frequency" class="form-select" id="frequencySelect" onchange="togglePaymentDay()"><option value="monthly">Ежемесячно</option><option value="biweekly">Каждые 2 недели</option></select></div>
                 <div class="col-md-2" id="paymentDayBlock"><select name="payment_day" class="form-select">{% for day in range(1, 29) %}<option value="{{ day }}">{{ day }}</option>{% endfor %}</select></div>
                 <div class="col-md-2" id="weekdayBlock" style="display:none;"><select name="payment_day" class="form-select"><option value="0">Пн</option><option value="1">Вт</option><option value="2">Ср</option><option value="3">Чт</option><option value="4">Пт</option></select></div>
@@ -120,7 +120,7 @@
                         </div>
                         {% if c.extra_payments %}
                         <div class="mb-3">
-                            <h6 class="fw-bold text-success">📋 История досрочных платежей</h6>
+                            <h6 class="fw-bold text-success"> История досрочных платежей</h6>
                             <div class="list-group">
                                 {% for ep in c.extra_payments %}
                                 <div class="list-group-item d-flex justify-content-between align-items-center p-2">
@@ -172,21 +172,19 @@
                 <div class="col-md-2"><label class="form-label small text-muted">Сумма</label><input type="number" step="0.01" name="amount" class="form-control" placeholder="0.00" required></div>
                 <div class="col-md-2"><label class="form-label small text-muted">Ставка (% годовых)</label><input type="number" step="0.1" name="interest_rate" class="form-control" placeholder="0.0" required></div>
                 <div class="col-md-2"><label class="form-label small text-muted">Срок (мес.)</label><input type="number" name="term_months" class="form-control" placeholder="12" required></div>
-                
                 <div class="col-12"><hr class="my-2"></div>
-                
                 <div class="col-md-3"><label class="form-label small text-muted">Тип вклада</label>
                     <select name="deposit_type" class="form-select">
                         <option value="срочный">📅 Срочный вклад</option>
                         <option value="бессрочный">🔄 До востребования</option>
                         <option value="валютный">💱 Валютный</option>
-                        <option value="индексируемый">📊 Индексируемый</option>
+                        <option value="индексируемый"> Индексируемый</option>
                         <option value="накопительный">🐷 Накопительный счёт</option>
                     </select>
                 </div>
                 <div class="col-md-2"><label class="form-label small text-muted">Валюта</label>
                     <select name="currency" class="form-select">
-                        <option value="RUB">🇺 Рубли</option>
+                        <option value="RUB">🇷 Рубли</option>
                         <option value="USD">🇺🇸 Доллары</option>
                         <option value="EUR">🇪🇺 Евро</option>
                         <option value="CNY">🇨🇳 Юани</option>
@@ -194,36 +192,21 @@
                 </div>
                 <div class="col-md-3"><label class="form-label small text-muted">Начисление процентов</label>
                     <select name="compounding_frequency" class="form-select">
-                        <option value="daily"> Ежедневно</option>
+                        <option value="daily">📆 Ежедневно</option>
                         <option value="monthly">📅 Ежемесячно</option>
-                        <option value="quarterly"> Ежеквартально</option>
+                        <option value="quarterly">📊 Ежеквартально</option>
                         <option value="yearly">📈 Ежегодно</option>
                         <option value="at_maturity">🏁 В конце срока</option>
                     </select>
                 </div>
-                
                 <div class="col-12"><hr class="my-2"></div>
-                
                 <div class="col-md-4">
                     <label class="form-label small text-muted">Опции вклада</label>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="is_replenishable" id="is_replenishable">
-                        <label class="form-check-label" for="is_replenishable">➕ Пополняемый</label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="has_partial_withdrawal" id="has_partial_withdrawal">
-                        <label class="form-check-label" for="has_partial_withdrawal">💸 С частичным снятием</label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="has_capitalization" id="has_capitalization">
-                        <label class="form-check-label" for="has_capitalization">🔄 С капитализацией (сложный %)</label>
-                    </div>
+                    <div class="form-check"><input class="form-check-input" type="checkbox" name="is_replenishable" id="is_replenishable"><label class="form-check-label" for="is_replenishable">➕ Пополняемый</label></div>
+                    <div class="form-check"><input class="form-check-input" type="checkbox" name="has_partial_withdrawal" id="has_partial_withdrawal"><label class="form-check-label" for="has_partial_withdrawal">💸 С частичным снятием</label></div>
+                    <div class="form-check"><input class="form-check-input" type="checkbox" name="has_capitalization" id="has_capitalization"><label class="form-check-label" for="has_capitalization">🔄 С капитализацией</label></div>
                 </div>
-                
-                <div class="col-md-8 d-flex align-items-end">
-                    <button type="submit" class="btn btn-success w-100 py-2" style="min-width: 200px;">💰 Открыть вклад</button>
-                </div>
-                
+                <div class="col-md-8 d-flex align-items-end"><button type="submit" class="btn btn-success w-100 py-2" style="min-width: 200px;"> Открыть вклад</button></div>
                 <div class="col-12"><small class="text-muted">* Сумма вклада будет автоматически вычтена из вашего баланса</small></div>
             </form>
         </div>
@@ -248,7 +231,7 @@
                             <h5 class="fw-bold mb-1">{{ d.bank_name }}</h5>
                             <p class="text-muted mb-2">{{ d.description }}</p>
                             <span class="badge bg-light text-dark mb-2">
-                                {% if d.deposit_type == 'срочный' %}📅 Срочный
+                                {% if d.deposit_type == 'срочный' %} Срочный
                                 {% elif d.deposit_type == 'бессрочный' %}🔄 До востребования
                                 {% elif d.deposit_type == 'валютный' %}💱 Валютный
                                 {% elif d.deposit_type == 'индексируемый' %}📊 Индексируемый
@@ -261,32 +244,17 @@
                     </div>
                     <hr class="my-2">
                     <div class="row">
-                        <div class="col-6">
-                            <small class="text-muted d-block">Вложено</small>
-                            <div class="fs-5 fw-bold">{{ d.amount }} {{ d.currency }}</div>
-                        </div>
-                        <div class="col-6 text-end">
-                            <small class="text-muted d-block">Текущая сумма</small>
-                            <div class="fs-5 fw-bold text-success">{{ d.current_amount }} {{ d.currency }}</div>
-                        </div>
+                        <div class="col-6"><small class="text-muted d-block">Вложено</small><div class="fs-5 fw-bold">{{ d.amount }} {{ d.currency }}</div></div>
+                        <div class="col-6 text-end"><small class="text-muted d-block">Текущая сумма</small><div class="fs-5 fw-bold text-success">{{ d.current_amount }} {{ d.currency }}</div></div>
                     </div>
                     <div class="row mt-2">
-                        <div class="col-4">
-                            <small class="text-muted d-block">Ставка</small>
-                            <div class="fw-bold">{{ d.interest_rate }}%</div>
-                        </div>
-                        <div class="col-4">
-                            <small class="text-muted d-block">Срок</small>
-                            <div class="fw-bold">{{ d.term_months }} мес.</div>
-                        </div>
-                        <div class="col-4">
-                            <small class="text-muted d-block">Доход</small>
-                            <div class="fw-bold text-success">+{{ d.total_profit }} {{ d.currency }}</div>
-                        </div>
+                        <div class="col-4"><small class="text-muted d-block">Ставка</small><div class="fw-bold">{{ d.interest_rate }}%</div></div>
+                        <div class="col-4"><small class="text-muted d-block">Срок</small><div class="fw-bold">{{ d.term_months }} мес.</div></div>
+                        <div class="col-4"><small class="text-muted d-block">Доход</small><div class="fw-bold text-success">+{{ d.total_profit }} {{ d.currency }}</div></div>
                     </div>
                     {% if d.is_replenishable or d.has_partial_withdrawal or d.has_capitalization %}
                     <div class="mt-2">
-                        {% if d.is_replenishable %}<span class="badge bg-info"> Пополняемый</span>{% endif %}
+                        {% if d.is_replenishable %}<span class="badge bg-info">➕ Пополняемый</span>{% endif %}
                         {% if d.has_partial_withdrawal %}<span class="badge bg-warning text-dark">💸 Частичное снятие</span>{% endif %}
                         {% if d.has_capitalization %}<span class="badge bg-primary">🔄 Капитализация</span>{% endif %}
                     </div>
@@ -323,15 +291,8 @@
         <div class="list-group" id="debtsList">
             {% for debt in debts %}
             <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3 border-0 shadow-sm mb-2 rounded-3">
-                <div>
-                    <h6 class="fw-bold mb-1">{{ debt.debtor_name }}</h6>
-                    <small class="text-muted">{{ debt.description }}</small>
-                </div>
-                <div class="text-end">
-                    <span class="fw-bold text-warning fs-5">{{ debt.amount }} ₽</span>
-                    <br>
-                    <a href="{{ url_for('delete_debt', id=debt.id) }}" class="btn btn-sm btn-outline-success mt-1">Вернул</a>
-                </div>
+                <div><h6 class="fw-bold mb-1">{{ debt.debtor_name }}</h6><small class="text-muted">{{ debt.description }}</small></div>
+                <div class="text-end"><span class="fw-bold text-warning fs-5">{{ debt.amount }} ₽</span><br><a href="{{ url_for('delete_debt', id=debt.id) }}" class="btn btn-sm btn-outline-success mt-1">Вернул</a></div>
             </div>
             {% else %}
             <div class="text-center py-4 text-muted">Никто не должен</div>
@@ -339,37 +300,104 @@
         </div>
     </div>
 
-    <!-- ПОДПИСКИ -->
+    <!-- ПОДПИСКИ (ОБНОВЛЁННЫЕ) -->
     <div class="tab-pane fade" id="tab-subs">
-        <div class="card p-4 mb-4"><form method="POST" class="row g-3">
-            <div class="col-md-3"><input type="text" name="service_name" class="form-control" placeholder="Сервис"></div>
-            <div class="col-md-3"><input type="text" name="plan_name" class="form-control" placeholder="Тариф"></div>
-            <div class="col-md-2"><input type="number" name="cost" class="form-control" placeholder="Цена"></div>
-            <div class="col-md-3"><select name="billing_cycle" class="form-select"><option value="monthly">Мес.</option><option value="yearly">Год</option></select></div>
-            <div class="col-md-1"><button type="submit" class="btn btn-info text-white w-100">+</button></div>
-        </form></div>
+        <!-- Карточка с общей суммой -->
+        <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #06B6D4 0%, #22D3EE 100%); color: white;">
+            <div class="card-body p-4">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h5 class="mb-1">📊 Общая стоимость подписок</h5>
+                        <small class="opacity-75">Все ваши активные подписки в месяц</small>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="display-4 fw-bold">{{ subscriptions_total_monthly }} ₽</div>
+                        <small class="opacity-75">в месяц</small>
+                    </div>
+                </div>
+            </div>
+        </div>
 
+        <!-- Календарь ближайших платежей -->
+        {% if upcoming_subs %}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-0 pt-4 px-4">
+                <h5 class="fw-bold mb-0">📅 Ближайшие платежи по подпискам</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    {% for sub in upcoming_subs %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center p-3">
+                        <div>
+                            <h6 class="fw-bold mb-1">{{ sub.service }}</h6>
+                            <small class="text-muted">
+                                {% if sub.cycle == 'monthly' %}Ежемесячно{% else %}Ежегодно{% endif %}
+                            </small>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-bold text-primary">{{ sub.cost }} ₽</div>
+                            <small class="text-muted">{{ sub.date.strftime('%d.%m.%Y') }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Форма добавления подписки -->
+        <div class="card p-4 mb-4 border-start border-4 border-info">
+            <h5 class="fw-bold mb-3">➕ Добавить подписку</h5>
+            <form method="POST" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label small text-muted">Сервис</label>
+                    <input type="text" name="service_name" class="form-control" placeholder="Например: Netflix" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small text-muted">Цена</label>
+                    <input type="number" step="0.01" name="cost" class="form-control" placeholder="0.00" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">Период</label>
+                    <select name="billing_cycle" class="form-select">
+                        <option value="monthly">В месяц</option>
+                        <option value="yearly">В год</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small text-muted">Дата следующего платежа</label>
+                    <input type="date" name="next_payment_date" class="form-control" required>
+                </div>
+                <div class="col-md-12 d-flex align-items-end">
+                    <button type="submit" class="btn btn-info text-white w-100">Добавить подписку</button>
+                </div>
+            </form>
+            <small class="text-muted mt-2 d-block">* Подписка не вычитается сразу из баланса — учитывается как ежемесячный расход</small>
+        </div>
+
+        <!-- Поиск подписок -->
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-body p-3">
                 <h6 class="fw-bold mb-3">🔍 Поиск подписок</h6>
                 <div class="row g-3">
-                    <div class="col-md-8"><div class="input-group"><span class="input-group-text bg-light border-0"><i class="bi bi-search text-muted"></i></span><input type="text" class="form-control border-0 bg-light" id="subscriptionSearchInput" placeholder="Поиск по сервису или тарифу..."></div></div>
+                    <div class="col-md-8"><div class="input-group"><span class="input-group-text bg-light border-0"><i class="bi bi-search text-muted"></i></span><input type="text" class="form-control border-0 bg-light" id="subscriptionSearchInput" placeholder="Поиск по сервису..."></div></div>
                     <div class="col-md-4"><button class="btn btn-outline-secondary w-100" onclick="resetSubscriptionSearch()"><i class="bi bi-arrow-counterclockwise me-1"></i> Сбросить</button></div>
                 </div>
                 <div id="subscriptionSearchResults" class="mt-3" style="display:none;"></div>
             </div>
         </div>
 
+        <!-- Таблица подписок -->
         <table class="table bg-white rounded-3 shadow-sm" id="subscriptionsTable">
-            <thead><tr><th>Сервис</th><th>Тариф</th><th>Период</th><th>Цена</th><th></th></tr></thead>
+            <thead><tr><th>Сервис</th><th>Период</th><th>Цена</th><th>Следующий платёж</th><th></th></tr></thead>
             <tbody>
                 {% for s in subscriptions %}
                 <tr>
                     <td class="fw-bold">{{ s.service_name }}</td>
-                    <td>{{ s.plan_name }}</td>
                     <td><span class="badge bg-light">{{ 'Мес.' if s.billing_cycle=='monthly' else 'Год' }}</span></td>
                     <td class="fw-bold">{{ s.cost }} ₽</td>
-                    <td><a href="{{ url_for('delete_subscription', id=s.id) }}" class="btn btn-sm btn-outline-danger">✕</a></td>
+                    <td>{{ s.next_payment_date.strftime('%d.%m.%Y') }}</td>
+                    <td><a href="{{ url_for('delete_subscription', id=s.id) }}" class="btn btn-sm btn-outline-danger"></a></td>
                 </tr>
                 {% else %}
                 <tr><td colspan="5" class="text-center text-muted">Нет подписок</td></tr>
@@ -383,7 +411,7 @@
 <!-- ФИЛЬТРАЦИЯ ТРАНЗАКЦИЙ -->
 <div class="mt-5">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="fw-bold mb-0"> История операций</h4>
+        <h4 class="fw-bold mb-0">📋 История операций</h4>
         <button class="btn btn-sm btn-outline-secondary" onclick="toggleFilters()">
             <i class="bi bi-funnel me-1"></i> Фильтры
         </button>
@@ -393,43 +421,15 @@
         <div class="card-body p-3">
             <h6 class="fw-bold mb-3">🔍 Фильтрация операций</h6>
             <div class="row g-3">
-                <div class="col-md-3">
-                    <label class="form-label small text-muted">Тип операции</label>
-                    <select class="form-select" id="filterType">
-                        <option value="">Все типы</option>
-                        <option value="income">💰 Доходы</option>
-                        <option value="expense"> Расходы</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label small text-muted">Категория</label>
-                    <select class="form-select" id="filterCategory">
-                        <option value="">Все категории</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label small text-muted">Дата от</label>
-                    <input type="date" class="form-control" id="filterDateFrom">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label small text-muted">Дата до</label>
-                    <input type="date" class="form-control" id="filterDateTo">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label small text-muted">Сумма от</label>
-                    <input type="number" class="form-control" id="filterMinAmount" placeholder="0">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label small text-muted">Сумма до</label>
-                    <input type="number" class="form-control" id="filterMaxAmount" placeholder="∞">
-                </div>
+                <div class="col-md-3"><label class="form-label small text-muted">Тип операции</label><select class="form-select" id="filterType"><option value="">Все типы</option><option value="income">💰 Доходы</option><option value="expense">📤 Расходы</option></select></div>
+                <div class="col-md-3"><label class="form-label small text-muted">Категория</label><select class="form-select" id="filterCategory"><option value="">Все категории</option></select></div>
+                <div class="col-md-2"><label class="form-label small text-muted">Дата от</label><input type="date" class="form-control" id="filterDateFrom"></div>
+                <div class="col-md-2"><label class="form-label small text-muted">Дата до</label><input type="date" class="form-control" id="filterDateTo"></div>
+                <div class="col-md-2"><label class="form-label small text-muted">Сумма от</label><input type="number" class="form-control" id="filterMinAmount" placeholder="0"></div>
+                <div class="col-md-2"><label class="form-label small text-muted">Сумма до</label><input type="number" class="form-control" id="filterMaxAmount" placeholder="∞"></div>
                 <div class="col-md-4 d-flex align-items-end gap-2">
-                    <button class="btn btn-primary flex-grow-1" onclick="applyFilters()">
-                        <i class="bi bi-funnel-fill me-1"></i> Применить
-                    </button>
-                    <button class="btn btn-outline-secondary" onclick="resetFilters()">
-                        <i class="bi bi-arrow-counterclockwise"></i> Сбросить
-                    </button>
+                    <button class="btn btn-primary flex-grow-1" onclick="applyFilters()"><i class="bi bi-funnel-fill me-1"></i> Применить</button>
+                    <button class="btn btn-outline-secondary" onclick="resetFilters()"><i class="bi bi-arrow-counterclockwise"></i></button>
                 </div>
             </div>
             <div class="mt-3 pt-3 border-top">
@@ -447,9 +447,7 @@
 
     <div class="card p-0 overflow-hidden">
         <table class="table table-hover mb-0">
-            <thead class="bg-light">
-                <tr><th class="ps-4">Дата</th><th>Категория</th><th>Тип</th><th>Сумма</th><th></th></tr>
-            </thead>
+            <thead class="bg-light"><tr><th class="ps-4">Дата</th><th>Категория</th><th>Тип</th><th>Сумма</th><th></th></tr></thead>
             <tbody id="transactionsTableBody">
                 {% for t in transactions %}
                 <tr>
@@ -472,7 +470,7 @@
     <div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow">
         <div class="modal-header border-0"><h5 class="modal-title fw-bold">Новая операция</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
         <div class="modal-body"><form method="POST">
-            <div class="mb-3"><select name="type" class="form-select form-select-lg"><option value="income">💰 Доход (+)</option><option value="expense"> Расход (-)</option></select></div>
+            <div class="mb-3"><select name="type" class="form-select form-select-lg"><option value="income">💰 Доход (+)</option><option value="expense">📤 Расход (-)</option></select></div>
             <div class="mb-3"><input type="number" name="amount" class="form-control form-control-lg" placeholder="0.00"></div>
             <div class="mb-3"><input type="text" name="category" class="form-control form-control-lg" placeholder="Категория"></div>
             <button type="submit" class="btn btn-primary w-100 py-2">Сохранить</button>
@@ -513,7 +511,7 @@ async function loadCategories() {
             option.textContent = cat;
             select.appendChild(option);
         });
-    } catch (e) { console.error('Ошибка загрузки категорий:', e); }
+    } catch (e) { console.error(e); }
 }
 
 async function applyFilters() {
@@ -531,7 +529,7 @@ async function applyFilters() {
         const data = await response.json();
         renderTransactions(data.transactions);
         document.getElementById('filterResultsInfo').textContent = `Найдено операций: ${data.total}`;
-    } catch (e) { console.error('Ошибка фильтрации:', e); }
+    } catch (e) { console.error(e); }
 }
 
 function renderTransactions(transactions) {
@@ -546,7 +544,7 @@ function renderTransactions(transactions) {
             <td class="fw-bold">${t.category}</td>
             <td><span class="badge ${t.type === 'income' ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'}">${t.type === 'income' ? 'Доход' : 'Расход'}</span></td>
             <td class="fw-bold ${t.type === 'income' ? 'text-success' : 'text-danger'}">${t.type === 'income' ? '+' : '-'}${t.amount} ₽</td>
-            <td><a href="/delete_trans/${t.id}" class="text-muted"></a></td>
+            <td><a href="/delete_trans/${t.id}" class="text-muted">🗑</a></td>
         </tr>
     `).join('');
 }
@@ -614,7 +612,7 @@ async function searchDeposits(query) {
         if (data.deposits.length === 0) {
             resultsDiv.innerHTML = '<div class="text-muted small">Вклады не найдены</div>';
         } else {
-            resultsDiv.innerHTML = `<div class="row g-3">${data.deposits.map(d => `<div class="col-md-6"><div class="card p-4 border-start border-4 border-success h-100"><div class="d-flex justify-content-between"><h5 class="fw-bold mb-0">${d.bank_name}</h5></div><p class="text-muted mb-3">${d.description}</p><div class="d-flex justify-content-between"><div><small class="text-muted">Вложено</small><div class="fs-5 fw-bold">${d.amount} ${d.currency}</div></div><div class="text-end"><small class="text-muted">Текущая сумма</small><div class="fs-5 fw-bold text-success">${d.current_amount} ${d.currency}</div></div></div></div></div>`).join('')}</div><small class="text-muted mt-2 d-block">Найдено: ${data.total}</small>`;
+            resultsDiv.innerHTML = `<div class="row g-3">${data.deposits.map(d => `<div class="col-md-6"><div class="card p-4 border-start border-4 border-success h-100"><div class="d-flex justify-content-between"><h5 class="fw-bold mb-0">${d.bank_name}</h5></div><p class="text-muted mb-3">${d.description}</p><div class="d-flex justify-content-between"><div><small class="text-muted">Вложено</small><div class="fs-5 fw-bold">${d.amount} ₽</div></div><div class="text-end"><small class="text-muted">Текущая сумма</small><div class="fs-5 fw-bold text-success">${d.current_amount} ₽</div></div></div></div></div>`).join('')}</div><small class="text-muted mt-2 d-block">Найдено: ${data.total}</small>`;
         }
         resultsDiv.style.display = 'block';
     } catch (e) { console.error(e); }
@@ -680,7 +678,7 @@ async function searchSubscriptions(query) {
         if (data.subscriptions.length === 0) {
             resultsDiv.innerHTML = '<div class="text-muted small">Подписки не найдены</div>';
         } else {
-            resultsDiv.innerHTML = `<table class="table bg-white rounded-3 shadow-sm"><thead><tr><th>Сервис</th><th>Тариф</th><th>Период</th><th>Цена</th></tr></thead><tbody>${data.subscriptions.map(s => `<tr><td class="fw-bold">${s.service_name}</td><td>${s.plan_name}</td><td><span class="badge bg-light">${s.billing_cycle === 'monthly' ? 'Мес.' : 'Год'}</span></td><td class="fw-bold">${s.cost} ₽</td></tr>`).join('')}</tbody></table><small class="text-muted mt-2 d-block">Найдено: ${data.total}</small>`;
+            resultsDiv.innerHTML = `<table class="table bg-white rounded-3 shadow-sm"><thead><tr><th>Сервис</th><th>Период</th><th>Цена</th><th>Следующий платёж</th></tr></thead><tbody>${data.subscriptions.map(s => `<tr><td class="fw-bold">${s.service_name}</td><td><span class="badge bg-light">${s.billing_cycle === 'monthly' ? 'Мес.' : 'Год'}</span></td><td class="fw-bold">${s.cost} ₽</td><td>-</td></tr>`).join('')}</tbody></table><small class="text-muted mt-2 d-block">Найдено: ${data.total}</small>`;
         }
         resultsDiv.style.display = 'block';
     } catch (e) { console.error(e); }
