@@ -596,6 +596,7 @@ def dashboard():
     income = sum(t.amount for t in transactions if t.type == 'income')
     expense = sum(t.amount for t in transactions if t.type == 'expense')
     subscriptions_total_monthly = sum(s.cost if s.billing_cycle == 'monthly' else s.cost / 12 for s in subscriptions)
+    credits_monthly_total = sum(c.monthly_payment_fixed for c in credits if c.is_active)
     total_expenses = expense + subscriptions_total_monthly
     balance = income - total_expenses
     
@@ -622,7 +623,8 @@ def dashboard():
                            chart_data=chart_data, recommendations=recommendations,
                            total_deposits_balance=total_deposits_balance,
                            subscriptions_total_monthly=subscriptions_total_monthly,
-                           upcoming_subs=upcoming_subs)
+                           upcoming_subs=upcoming_subs,
+                           credits_monthly_total=credits_monthly_total)
 
 # ================= API ПОИСКА =================
 
