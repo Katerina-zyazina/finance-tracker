@@ -12,26 +12,78 @@
     </button>
 </div>
 
+<!-- Карточки статистики -->
 <div class="row g-4 mb-5">
-    <div class="col-md-4"><div class="stat-card bg-gradient-success h-100"><h6 class="opacity-75 mb-2">💰 Доходы</h6><h2 class="fw-bold mb-0">{{ income }} ₽</h2></div></div>
-    <div class="col-md-4"><div class="stat-card bg-gradient-danger h-100"><h6 class="opacity-75 mb-2">📉 Расходы</h6><h2 class="fw-bold mb-0">{{ expense }} ₽</h2></div></div>
-    <div class="col-md-4"><div class="stat-card bg-gradient-primary h-100"><h6 class="opacity-75 mb-2">💵 Баланс</h6><h2 class="fw-bold mb-0">{{ balance }} ₽</h2></div></div>
+    <div class="col-md-4">
+        <div class="card border-0 h-100" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border-radius: 20px;">
+            <div class="card-body p-4">
+                <h6 class="mb-2 opacity-90">💰 Доходы</h6>
+                <h2 class="fw-bold mb-0">{{ income }} ₽</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 h-100" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border-radius: 20px;">
+            <div class="card-body p-4">
+                <h6 class="mb-2 opacity-90">📉 Расходы</h6>
+                <h2 class="fw-bold mb-0">{{ expense }} ₽</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 h-100" style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: white; border-radius: 20px;">
+            <div class="card-body p-4">
+                <h6 class="mb-2 opacity-90">💵 Баланс</h6>
+                <h2 class="fw-bold mb-0">{{ balance }} ₽</h2>
+            </div>
+        </div>
+    </div>
 </div>
 
+<!-- Дополнительные показатели -->
 <div class="row g-3 mb-5">
-    <div class="col-md-3"><div class="card border-0 shadow-sm h-100"><div class="card-body text-center"><h6 class="text-muted mb-2">Ближайшие платежи</h6><h4 class="fw-bold text-danger mb-0">{{ upcoming_payments }} ₽</h4></div></div></div>
-    <div class="col-md-3"><div class="card border-0 shadow-sm h-100"><div class="card-body text-center"><h6 class="text-muted mb-2">Подписки/мес</h6><h4 class="fw-bold text-info mb-0">{{ total_subscriptions }} ₽</h4></div></div></div>
-    <div class="col-md-3"><div class="card border-0 shadow-sm h-100"><div class="card-body text-center"><h6 class="text-muted mb-2">Мне должны</h6><h4 class="fw-bold text-warning mb-0">{{ total_debts_owed }} ₽</h4></div></div></div>
-    <div class="col-md-3"><div class="card border-0 shadow-sm h-100"><div class="card-body text-center"><h6 class="text-muted mb-2">🏦 Баланс вкладов</h6><h4 class="fw-bold text-success mb-0">{{ total_deposits_balance }} ₽</h4></div></div></div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
+            <div class="card-body text-center">
+                <h6 class="text-muted mb-2">Ближайшие платежи</h6>
+                <h4 class="fw-bold text-danger mb-0">{{ upcoming_payments }} ₽</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
+            <div class="card-body text-center">
+                <h6 class="text-muted mb-2">Подписки/мес</h6>
+                <h4 class="fw-bold text-info mb-0">{{ total_subscriptions }} ₽</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
+            <div class="card-body text-center">
+                <h6 class="text-muted mb-2">Мне должны</h6>
+                <h4 class="fw-bold text-warning mb-0">{{ total_debts_owed }} ₽</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
+            <div class="card-body text-center">
+                <h6 class="text-muted mb-2">🏦 Баланс вкладов</h6>
+                <h4 class="fw-bold text-success mb-0">{{ total_deposits_balance }} ₽</h4>
+            </div>
+        </div>
+    </div>
 </div>
 
+<!-- Рекомендации ИИ -->
 {% if recommendations %}
 <div class="mb-5">
     <h5 class="fw-bold mb-3">💡 Персональные советы</h5>
     <div class="row g-3">
         {% for rec in recommendations %}
         <div class="col-md-4">
-            <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid {% if rec.type == 'success' %}#00B894{% elif rec.type == 'warning' %}#F39C12{% elif rec.type == 'danger' %}#E17055{% else %}#0984E3{% endif %}">
+            <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid {% if rec.type == 'success' %}#10b981{% elif rec.type == 'warning' %}#f59e0b{% elif rec.type == 'danger' %}#ef4444{% else %}#6366f1{% endif %}; border-radius: 16px;">
                 <div class="card-body">
                     <div class="d-flex align-items-start gap-3">
                         <span class="fs-4">{{ rec.icon }}</span>
@@ -48,19 +100,45 @@
 </div>
 {% endif %}
 
+<!-- Графики -->
 <div class="row g-4 mb-5">
-    <div class="col-md-6"><div class="card border-0 shadow-sm h-100"><div class="card-header bg-white border-0 pt-4 px-4"><h5 class="fw-bold mb-0">📊 Расходы по категориям</h5></div><div class="card-body"><canvas id="categoryChart" height="250"></canvas></div></div></div>
-    <div class="col-md-6"><div class="card border-0 shadow-sm h-100"><div class="card-header bg-white border-0 pt-4 px-4"><h5 class="fw-bold mb-0">📈 Доходы vs Расходы</h5></div><div class="card-body"><canvas id="incomeExpenseChart" height="250"></canvas></div></div></div>
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
+            <div class="card-header bg-white border-0 pt-4 px-4">
+                <h5 class="fw-bold mb-0">📊 Расходы по категориям</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="categoryChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
+            <div class="card-header bg-white border-0 pt-4 px-4">
+                <h5 class="fw-bold mb-0">📈 Доходы vs Расходы</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="incomeExpenseChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
 </div>
 
-<div class="card border-0 shadow-sm mb-5"><div class="card-header bg-white border-0 pt-4 px-4"><h5 class="fw-bold mb-0">💹 Динамика баланса</h5></div><div class="card-body"><canvas id="balanceChart" height="100"></canvas></div></div>
+<div class="card border-0 shadow-sm mb-5" style="border-radius: 16px;">
+    <div class="card-header bg-white border-0 pt-4 px-4">
+        <h5 class="fw-bold mb-0">💹 Динамика баланса</h5>
+    </div>
+    <div class="card-body">
+        <canvas id="balanceChart" height="100"></canvas>
+    </div>
+</div>
 
 <!-- ВКЛАДКИ (ИЗМЕНЁННЫЙ ПОРЯДОК) -->
 <ul class="nav nav-pills mb-4 p-1 bg-white rounded-3 shadow-sm d-inline-flex" id="toolsTab" role="tablist">
-    <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-credits">💳 Кредиты</button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-deposits"> Вклады</button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-subs">📺 Подписки</button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-debts">🤝 Долги мне</button></li>
+    <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-credits" style="border-radius: 10px;">💳 Кредиты</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-deposits" style="border-radius: 10px;">🏦 Вклады</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-subs" style="border-radius: 10px;">📺 Подписки</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-debts" style="border-radius: 10px;">🤝 Долги мне</button></li>
 </ul>
 
 <div class="tab-content">
@@ -68,29 +146,29 @@
     <!-- КРЕДИТЫ -->
     <div class="tab-pane fade show active" id="tab-credits">
         <!-- ПЛАШКА С ОБЩЕЙ СУММОЙ КРЕДИТОВ -->
-        <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); color: white;">
+        <div class="card border-0 shadow-sm mb-4 text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px;">
             <div class="card-body p-4">
                 <div class="row align-items-center">
                     <div class="col-md-8">
-                        <h5 class="mb-1"> Общая сумма кредитов в месяц</h5>
-                        <small class="opacity-75">Все ваши ежемесячные платежи по кредитам</small>
+                        <h5 class="mb-1 fw-bold">💳 Общая сумма кредитов в месяц</h5>
+                        <small class="opacity-90">Все ваши ежемесячные платежи по кредитам</small>
                     </div>
                     <div class="col-md-4 text-end">
                         <div class="display-4 fw-bold">{{ credits_monthly_total }} ₽</div>
-                        <small class="opacity-75">в месяц</small>
+                        <small class="opacity-90">в месяц</small>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="card p-4 mb-4 border-start border-4 border-primary">
+        <div class="card p-4 mb-4 border-0 shadow-sm" style="border-left: 4px solid #667eea; border-radius: 16px;">
             <h5 class="fw-bold mb-3">Новый кредит / Рассрочка</h5>
             <form method="POST" class="row g-3">
                 <div class="col-md-3"><input type="text" name="credit_name" class="form-control" placeholder="Название" required></div>
                 <div class="col-md-2"><input type="number" step="0.01" name="total_amount" class="form-control" placeholder="Сумма" required></div>
                 <div class="col-md-2"><input type="number" step="0.1" name="interest_rate" class="form-control" placeholder="Процент"></div>
                 <div class="col-md-2"><input type="number" step="0.01" name="monthly_payment_fixed" class="form-control" placeholder="Платеж" required></div>
-                <div class="col-md-2 d-flex align-items-end"><button type="submit" class="btn btn-primary w-100 py-2" style="min-width: 150px;">Создать кредит</button></div>
+                <div class="col-md-2 d-flex align-items-end"><button type="submit" class="btn btn-primary w-100 py-2" style="min-width: 150px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 10px;">Создать кредит</button></div>
                 <div class="col-12"><hr class="my-3"><h6 class="fw-bold mb-3">📅 Настройки графика</h6></div>
                 <div class="col-md-3"><select name="payment_frequency" class="form-select" id="frequencySelect" onchange="togglePaymentDay()"><option value="monthly">Ежемесячно</option><option value="biweekly">Каждые 2 недели</option></select></div>
                 <div class="col-md-2" id="paymentDayBlock"><select name="payment_day" class="form-select">{% for day in range(1, 29) %}<option value="{{ day }}">{{ day }}</option>{% endfor %}</select></div>
@@ -100,7 +178,7 @@
             </form>
         </div>
 
-        <div class="card border-0 shadow-sm mb-4">
+        <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
             <div class="card-body p-3">
                 <h6 class="fw-bold mb-3">🔍 Поиск кредитов</h6>
                 <div class="row g-3">
@@ -182,22 +260,22 @@
     <!-- ВКЛАДЫ -->
     <div class="tab-pane fade" id="tab-deposits">
         <!-- ПЛАШКА С ОБЩЕЙ СУММОЙ ВКЛАДОВ -->
-        <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white;">
+        <div class="card border-0 shadow-sm mb-4 text-white" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); border-radius: 20px;">
             <div class="card-body p-4">
                 <div class="row align-items-center">
                     <div class="col-md-8">
-                        <h5 class="mb-1"> Общая сумма вкладов</h5>
-                        <small class="opacity-75">Все ваши активные вклады с учётом процентов</small>
+                        <h5 class="mb-1 fw-bold">🏦 Общая сумма вкладов</h5>
+                        <small class="opacity-90">Все ваши активные вклады с учётом процентов</small>
                     </div>
                     <div class="col-md-4 text-end">
                         <div class="display-4 fw-bold">{{ total_deposits_balance }} ₽</div>
-                        <small class="opacity-75">текущая сумма</small>
+                        <small class="opacity-90">текущая сумма</small>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="card p-4 mb-4 border-start border-4 border-success">
+        <div class="card p-4 mb-4 border-0 shadow-sm" style="border-left: 4px solid #11998e; border-radius: 16px;">
             <h5 class="fw-bold mb-3">🏦 Новый вклад</h5>
             <form method="POST" class="row g-3">
                 <div class="col-md-3"><label class="form-label small text-muted">Банк</label><input type="text" name="bank_name" class="form-control" placeholder="Название банка" required></div>
@@ -208,7 +286,7 @@
                 <div class="col-12"><hr class="my-2"></div>
                 <div class="col-md-3"><label class="form-label small text-muted">Тип вклада</label>
                     <select name="deposit_type" class="form-select">
-                        <option value="срочный"> Срочный вклад</option>
+                        <option value="срочный">📅 Срочный вклад</option>
                         <option value="бессрочный">🔄 До востребования</option>
                         <option value="валютный">💱 Валютный</option>
                         <option value="индексируемый">📊 Индексируемый</option>
@@ -217,10 +295,10 @@
                 </div>
                 <div class="col-md-2"><label class="form-label small text-muted">Валюта</label>
                     <select name="currency" class="form-select">
-                        <option value="RUB">🇺 Рубли</option>
+                        <option value="RUB">🇷🇺 Рубли</option>
                         <option value="USD">🇺🇸 Доллары</option>
                         <option value="EUR">🇪🇺 Евро</option>
-                        <option value="CNY">🇨 Юани</option>
+                        <option value="CNY">🇨🇳 Юани</option>
                     </select>
                 </div>
                 <div class="col-md-3"><label class="form-label small text-muted">Начисление процентов</label>
@@ -239,12 +317,12 @@
                     <div class="form-check"><input class="form-check-input" type="checkbox" name="has_partial_withdrawal" id="has_partial_withdrawal"><label class="form-check-label" for="has_partial_withdrawal">💸 С частичным снятием</label></div>
                     <div class="form-check"><input class="form-check-input" type="checkbox" name="has_capitalization" id="has_capitalization"><label class="form-check-label" for="has_capitalization">🔄 С капитализацией</label></div>
                 </div>
-                <div class="col-md-8 d-flex align-items-end"><button type="submit" class="btn btn-success w-100 py-2" style="min-width: 200px;">🏦 Открыть вклад</button></div>
+                <div class="col-md-8 d-flex align-items-end"><button type="submit" class="btn btn-success w-100 py-2" style="min-width: 200px; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); border: none; border-radius: 10px;">🏦 Открыть вклад</button></div>
                 <div class="col-12"><small class="text-muted">* Сумма вклада будет автоматически вычтена из вашего баланса</small></div>
             </form>
         </div>
 
-        <div class="card border-0 shadow-sm mb-4">
+        <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
             <div class="card-body p-3">
                 <h6 class="fw-bold mb-3">🔍 Поиск вкладов</h6>
                 <div class="row g-3">
@@ -258,7 +336,7 @@
         <div class="row g-3" id="depositsList">
             {% for d in deposits %}
             <div class="col-md-6">
-                <div class="card p-4 border-start border-4 border-success h-100">
+                <div class="card p-4 border-0 shadow-sm h-100" style="border-left: 4px solid #11998e; border-radius: 16px;">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
                             <h5 class="fw-bold mb-1">{{ d.bank_name }}</h5>
@@ -303,23 +381,23 @@
 
     <!-- ПОДПИСКИ (ТЕПЕРЬ ТРЕТЬЯ) -->
     <div class="tab-pane fade" id="tab-subs">
-        <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #06B6D4 0%, #22D3EE 100%); color: white;">
+        <div class="card border-0 shadow-sm mb-4 text-white" style="background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%); border-radius: 20px;">
             <div class="card-body p-4">
                 <div class="row align-items-center">
                     <div class="col-md-8">
-                        <h5 class="mb-1">📊 Общая стоимость подписок</h5>
-                        <small class="opacity-75">Все ваши активные подписки в месяц</small>
+                        <h5 class="mb-1 fw-bold">📊 Общая стоимость подписок</h5>
+                        <small class="opacity-90">Все ваши активные подписки в месяц</small>
                     </div>
                     <div class="col-md-4 text-end">
                         <div class="display-4 fw-bold">{{ subscriptions_total_monthly }} ₽</div>
-                        <small class="opacity-75">в месяц</small>
+                        <small class="opacity-90">в месяц</small>
                     </div>
                 </div>
             </div>
         </div>
 
         {% if upcoming_subs %}
-        <div class="card border-0 shadow-sm mb-4">
+        <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
             <div class="card-header bg-white border-0 pt-4 px-4">
                 <h5 class="fw-bold mb-0">📅 Ближайшие платежи по подпискам</h5>
             </div>
@@ -344,7 +422,7 @@
         </div>
         {% endif %}
 
-        <div class="card p-4 mb-4 border-start border-4 border-info">
+        <div class="card p-4 mb-4 border-0 shadow-sm" style="border-left: 4px solid #2193b0; border-radius: 16px;">
             <h5 class="fw-bold mb-3">➕ Добавить подписку</h5>
             <form method="POST" class="row g-3">
                 <div class="col-md-4">
@@ -367,15 +445,15 @@
                     <input type="date" name="next_payment_date" class="form-control" required>
                 </div>
                 <div class="col-md-12 d-flex align-items-end">
-                    <button type="submit" class="btn btn-info text-white w-100">Добавить подписку</button>
+                    <button type="submit" class="btn btn-info text-white w-100" style="background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%); border: none; border-radius: 10px;">Добавить подписку</button>
                 </div>
             </form>
             <small class="text-muted mt-2 d-block">* Подписка не вычитается сразу из баланса — учитывается как ежемесячный расход</small>
         </div>
 
-        <div class="card border-0 shadow-sm mb-4">
+        <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
             <div class="card-body p-3">
-                <h6 class="fw-bold mb-3"> Поиск подписок</h6>
+                <h6 class="fw-bold mb-3">🔍 Поиск подписок</h6>
                 <div class="row g-3">
                     <div class="col-md-8"><div class="input-group"><span class="input-group-text bg-light border-0"><i class="bi bi-search text-muted"></i></span><input type="text" class="form-control border-0 bg-light" id="subscriptionSearchInput" placeholder="Поиск по сервису..."></div></div>
                     <div class="col-md-4"><button class="btn btn-outline-secondary w-100" onclick="resetSubscriptionSearch()"><i class="bi bi-arrow-counterclockwise me-1"></i> Сбросить</button></div>
@@ -405,29 +483,32 @@
     <!-- ДОЛГИ МНЕ (ТЕПЕРЬ ПОСЛЕДНЯЯ) -->
     <div class="tab-pane fade" id="tab-debts">
         <!-- ПЛАШКА С ОБЩЕЙ СУММОЙ ДОЛГОВ -->
-        <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%); color: white;">
+        <div class="card border-0 shadow-sm mb-4 text-white" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 20px;">
             <div class="card-body p-4">
                 <div class="row align-items-center">
                     <div class="col-md-8">
-                        <h5 class="mb-1">🤝 Общая сумма долгов</h5>
-                        <small class="opacity-75">Все долги, которые вам должны вернуть</small>
+                        <h5 class="mb-1 fw-bold">🤝 Общая сумма долгов</h5>
+                        <small class="opacity-90">Все долги, которые вам должны вернуть</small>
                     </div>
                     <div class="col-md-4 text-end">
                         <div class="display-4 fw-bold">{{ total_debts_owed }} ₽</div>
-                        <small class="opacity-75">к возврату</small>
+                        <small class="opacity-90">к возврату</small>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="card p-4 mb-4"><form method="POST" class="row g-3">
-            <div class="col-md-3"><input type="text" name="debtor_name" class="form-control" placeholder="Кто должен?"></div>
-            <div class="col-md-3"><input type="number" name="amount" class="form-control" placeholder="Сумма"></div>
-            <div class="col-md-5"><input type="text" name="description" class="form-control" placeholder="Комментарий"></div>
-            <div class="col-md-1"><button type="submit" class="btn btn-warning text-white w-100">+</button></div>
-        </form></div>
+        <div class="card p-4 mb-4 border-0 shadow-sm" style="border-left: 4px solid #f5576c; border-radius: 16px;">
+            <h5 class="fw-bold mb-3">🤝 Добавить долг</h5>
+            <form method="POST" class="row g-3">
+                <div class="col-md-3"><input type="text" name="debtor_name" class="form-control" placeholder="Кто должен?"></div>
+                <div class="col-md-3"><input type="number" name="amount" class="form-control" placeholder="Сумма"></div>
+                <div class="col-md-5"><input type="text" name="description" class="form-control" placeholder="Комментарий"></div>
+                <div class="col-md-1"><button type="submit" class="btn btn-warning text-white w-100" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border: none; border-radius: 10px;">+</button></div>
+            </form>
+        </div>
 
-        <div class="card border-0 shadow-sm mb-4">
+        <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
             <div class="card-body p-3">
                 <h6 class="fw-bold mb-3">🔍 Поиск долгов</h6>
                 <div class="row g-3">
@@ -461,7 +542,7 @@
         </button>
     </div>
 
-    <div class="card border-0 shadow-sm mb-4" id="filterPanel" style="display:none;">
+    <div class="card border-0 shadow-sm mb-4" id="filterPanel" style="display:none; border-radius: 16px;">
         <div class="card-body p-3">
             <h6 class="fw-bold mb-3">🔍 Фильтрация операций</h6>
             <div class="row g-3">
@@ -489,7 +570,7 @@
         </div>
     </div>
 
-    <div class="card p-0 overflow-hidden">
+    <div class="card p-0 overflow-hidden" style="border-radius: 16px;">
         <table class="table table-hover mb-0">
             <thead class="bg-light"><tr><th class="ps-4">Дата</th><th>Категория</th><th>Тип</th><th>Сумма</th><th></th></tr></thead>
             <tbody id="transactionsTableBody">
@@ -514,10 +595,10 @@
     <div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow">
         <div class="modal-header border-0"><h5 class="modal-title fw-bold">Новая операция</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
         <div class="modal-body"><form method="POST">
-            <div class="mb-3"><select name="type" class="form-select form-select-lg"><option value="income">💰 Доход (+)</option><option value="expense"> Расход (-)</option></select></div>
+            <div class="mb-3"><select name="type" class="form-select form-select-lg"><option value="income">💰 Доход (+)</option><option value="expense">📤 Расход (-)</option></select></div>
             <div class="mb-3"><input type="number" name="amount" class="form-control form-control-lg" placeholder="0.00"></div>
             <div class="mb-3"><input type="text" name="category" class="form-control form-control-lg" placeholder="Категория"></div>
-            <button type="submit" class="btn btn-primary w-100 py-2">Сохранить</button>
+            <button type="submit" class="btn btn-primary w-100 py-2" style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); border: none; border-radius: 10px;">Сохранить</button>
         </form></div>
     </div></div>
 </div>
@@ -656,7 +737,7 @@ async function searchDeposits(query) {
         if (data.deposits.length === 0) {
             resultsDiv.innerHTML = '<div class="text-muted small">Вклады не найдены</div>';
         } else {
-            resultsDiv.innerHTML = `<div class="row g-3">${data.deposits.map(d => `<div class="col-md-6"><div class="card p-4 border-start border-4 border-success h-100"><div class="d-flex justify-content-between"><h5 class="fw-bold mb-0">${d.bank_name}</h5></div><p class="text-muted mb-3">${d.description}</p><div class="d-flex justify-content-between"><div><small class="text-muted">Вложено</small><div class="fs-5 fw-bold">${d.amount} ₽</div></div><div class="text-end"><small class="text-muted">Текущая сумма</small><div class="fs-5 fw-bold text-success">${d.current_amount} ₽</div></div></div></div></div>`).join('')}</div><small class="text-muted mt-2 d-block">Найдено: ${data.total}</small>`;
+            resultsDiv.innerHTML = `<div class="row g-3">${data.deposits.map(d => `<div class="col-md-6"><div class="card p-4 border-0 shadow-sm h-100" style="border-left: 4px solid #11998e;"><div class="d-flex justify-content-between"><h5 class="fw-bold mb-0">${d.bank_name}</h5></div><p class="text-muted mb-3">${d.description}</p><div class="d-flex justify-content-between"><div><small class="text-muted">Вложено</small><div class="fs-5 fw-bold">${d.amount} ₽</div></div><div class="text-end"><small class="text-muted">Текущая сумма</small><div class="fs-5 fw-bold text-success">${d.current_amount} ₽</div></div></div></div></div>`).join('')}</div><small class="text-muted mt-2 d-block">Найдено: ${data.total}</small>`;
         }
         resultsDiv.style.display = 'block';
     } catch (e) { console.error(e); }
@@ -738,7 +819,7 @@ function resetSubscriptionSearch() {
 document.addEventListener('DOMContentLoaded', function() {
     loadCategories();
     const chartData = {{ chart_data | tojson }};
-    const colors = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#8B5CF6', '#EC4899', '#14B8A6'];
+    const colors = ['#667eea', '#11998e', '#f59e0b', '#ef4444', '#2193b0', '#764ba2', '#f093fb', '#38ef7d'];
 
     const ctxCat = document.getElementById('categoryChart');
     if (chartData.categories.length > 0 && ctxCat) {
@@ -747,14 +828,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const ctxBar = document.getElementById('incomeExpenseChart');
     if (ctxBar) {
-        new Chart(ctxBar, { type: 'bar', data: { labels: chartData.months_data.map(d => d.month), datasets: [{ label: 'Доходы', data: chartData.months_data.map(d => d.income), backgroundColor: '#10B981', borderRadius: 5 }, { label: 'Расходы', data: chartData.months_data.map(d => d.expense), backgroundColor: '#EF4444', borderRadius: 5 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } } });
+        new Chart(ctxBar, { type: 'bar', data: { labels: chartData.months_data.map(d => d.month), datasets: [{ label: 'Доходы', data: chartData.months_data.map(d => d.income), backgroundColor: '#10b981', borderRadius: 5 }, { label: 'Расходы', data: chartData.months_data.map(d => d.expense), backgroundColor: '#ef4444', borderRadius: 5 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } } });
     }
 
     const ctxLine = document.getElementById('balanceChart');
     if (ctxLine) {
         let bal = [], run = 0;
         chartData.months_data.forEach(m => { run += m.income - m.expense; bal.push(run); });
-        new Chart(ctxLine, { type: 'line', data: { labels: chartData.months_data.map(d => d.month), datasets: [{ label: 'Баланс', data: bal, borderColor: '#4F46E5', backgroundColor: 'rgba(79, 70, 229, 0.1)', fill: true, tension: 0.4, pointRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+        new Chart(ctxLine, { type: 'line', data: { labels: chartData.months_data.map(d => d.month), datasets: [{ label: 'Баланс', data: bal, borderColor: '#6366f1', backgroundColor: 'rgba(99, 102, 241, 0.1)', fill: true, tension: 0.4, pointRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
     }
 });
 </script>
