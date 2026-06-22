@@ -9,7 +9,6 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     
     <style>
-        /* === СВЕТЛАЯ ТЕМА (ПО УМОЛЧАНИЮ) === */
         :root {
             --body-bg: #F5F7FA;
             --text-color: #1A1A1A;
@@ -21,12 +20,8 @@
             --input-text: #212529;
             --shadow-color: rgba(0, 0, 0, 0.08);
             --border-color: #E9ECEF;
-            --table-header-bg: #F8F9FA;
-            --table-row-bg: #FFFFFF;
-            --table-row-hover: #F1F3F5;
         }
 
-        /* === ТЕМНАЯ ТЕМА === */
         body.dark-mode {
             --body-bg: #000000;
             --text-color: #FFFFFF;
@@ -38,9 +33,6 @@
             --input-text: #FFFFFF;
             --shadow-color: rgba(0, 0, 0, 0.5);
             --border-color: #333333;
-            --table-header-bg: #1A1A1A;
-            --table-row-bg: #111111;
-            --table-row-hover: #222222;
         }
 
         body { 
@@ -51,7 +43,6 @@
             line-height: 1.6;
         }
 
-        /* Навигация */
         .navbar { 
             background: var(--navbar-bg) !important; 
             border-bottom: 1px solid var(--border-color);
@@ -63,11 +54,7 @@
             color: #6C5CE7 !important; 
             font-size: 1.25rem; 
         }
-        .navbar-brand:hover {
-            color: #5A4BD1 !important;
-        }
 
-        /* Карточки */
         .card { 
             border: 1px solid var(--border-color);
             border-radius: 16px; 
@@ -76,9 +63,7 @@
             color: var(--text-color);
             transition: transform 0.2s, background-color 0.3s, border-color 0.3s;
         }
-        .card:hover { 
-            transform: translateY(-2px); 
-        }
+        .card:hover { transform: translateY(-2px); }
         .card-header { 
             background: transparent; 
             border-bottom: 1px solid var(--border-color);
@@ -86,22 +71,19 @@
             font-weight: 600;
             padding: 1.25rem;
         }
-        .card-body {
-            color: var(--text-color);
-        }
+        .card-body { color: var(--text-color); }
 
-        /* === ВАЖНО: Цветные карточки статистики (всегда белый текст) === */
+        /* Цветные карточки статистики — всегда белый текст */
         .stat-card { 
-            color: white !important; /* Принудительно белый текст */
+            color: white !important;
             border-radius: 20px; 
             padding: 1.5rem; 
             position: relative; 
             overflow: hidden;
             box-shadow: 0 8px 30px rgba(0,0,0,0.2);
         }
-        /* Принудительно белый цвет для всех элементов внутри цветных карточек */
         .stat-card h1, .stat-card h2, .stat-card h3, .stat-card h4, .stat-card h5, .stat-card h6,
-        .stat-card small, .stat-card p, .stat-card span, .stat-card div {
+        .stat-card small, .stat-card p, .stat-card span, .stat-card div, .stat-card .fw-bold {
             color: white !important;
         }
         
@@ -111,7 +93,6 @@
         .bg-gradient-info { background: linear-gradient(135deg, #0984E3 0%, #74B9FF 100%); }
         .bg-gradient-warning { background: linear-gradient(135deg, #F39C12 0%, #F1C40F 100%); }
 
-        /* Формы */
         .form-control, .form-select { 
             border-radius: 10px; 
             border: 1px solid var(--input-border); 
@@ -119,7 +100,6 @@
             background-color: var(--input-bg); 
             color: var(--input-text);
             font-weight: 500;
-            font-size: 0.95rem;
         }
         .form-control:focus, .form-select:focus { 
             box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.2); 
@@ -127,17 +107,9 @@
             background-color: var(--card-bg);
             color: var(--input-text);
         }
-        .form-control::placeholder, .form-select option { 
-            color: var(--text-muted); 
-            opacity: 0.7;
-        }
-        .form-label {
-            color: var(--text-muted);
-            font-weight: 500;
-            font-size: 0.85rem;
-        }
+        .form-control::placeholder { color: var(--text-muted); opacity: 0.7; }
+        .form-label { color: var(--text-muted); font-weight: 500; font-size: 0.85rem; }
 
-        /* Кнопки */
         .btn-primary {
             background: linear-gradient(135deg, #6C5CE7 0%, #A29BFE 100%);
             border: none; 
@@ -146,57 +118,22 @@
             font-weight: 600;
             color: white !important;
             box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
-            transition: all 0.3s;
         }
-        .btn-primary:hover { 
-            opacity: 0.9;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(108, 92, 231, 0.4);
-        }
-        .btn-outline-secondary {
-            color: var(--text-color);
-            border-color: var(--input-border);
-            background-color: transparent;
-        }
-        .btn-outline-secondary:hover {
-            background-color: var(--input-bg);
-            color: var(--text-color);
-            border-color: var(--text-muted);
-        }
-        .btn-success {
-            background: linear-gradient(135deg, #00B894 0%, #55EFC4 100%);
-            border: none;
-            color: white !important;
-            font-weight: 600;
-        }
-        .btn-danger {
-            background: linear-gradient(135deg, #E17055 0%, #FDCB6E 100%);
-            border: none;
-            color: white !important;
-            font-weight: 600;
-        }
-        .btn-outline-danger {
-            color: #E17055;
-            border-color: #E17055;
-        }
-        .btn-outline-danger:hover {
-            background-color: #E17055;
-            color: white;
-        }
+        .btn-primary:hover { opacity: 0.9; transform: translateY(-2px); }
+        .btn-outline-secondary { color: var(--text-color); border-color: var(--input-border); }
+        .btn-outline-secondary:hover { background-color: var(--input-bg); color: var(--text-color); }
+        .btn-success { background: linear-gradient(135deg, #00B894 0%, #55EFC4 100%); border: none; color: white !important; font-weight: 600; }
+        .btn-danger { background: linear-gradient(135deg, #E17055 0%, #FDCB6E 100%); border: none; color: white !important; font-weight: 600; }
+        .btn-outline-danger { color: #E17055; border-color: #E17055; }
+        .btn-outline-danger:hover { background-color: #E17055; color: white; }
 
-        /* Таблицы */
-        .table { 
-            color: var(--text-color);
-            margin-bottom: 0;
-        }
+        .table { color: var(--text-color); margin-bottom: 0; }
         .table thead th { 
-            background-color: var(--table-header-bg);
+            background-color: var(--card-bg);
             border-bottom: 2px solid var(--border-color); 
             color: var(--text-muted);
             font-weight: 600;
-            text-transform: uppercase;
             font-size: 0.8rem;
-            letter-spacing: 0.5px;
             padding: 1rem;
         }
         .table td { 
@@ -204,31 +141,20 @@
             color: var(--text-color);
             font-weight: 500;
             padding: 0.8rem 1rem;
-            background-color: var(--table-row-bg);
+            background-color: var(--card-bg);
         }
-        .table-hover tbody tr:hover {
-            background-color: var(--table-row-hover);
-        }
-        .table-light, .table-light > th, .table-light > td {
-            background-color: var(--table-header-bg) !important;
-            color: var(--text-color);
-        }
+        .table-hover tbody tr:hover { background-color: var(--input-bg); }
 
-        /* Аккордеоны */
         .accordion-button {
             background-color: var(--card-bg);
             color: var(--text-color);
             border: 1px solid var(--border-color);
             font-weight: 600;
-            padding: 1.2rem;
         }
         .accordion-button:not(.collapsed) {
             background-color: var(--input-bg);
             color: var(--text-color);
             box-shadow: none;
-        }
-        .accordion-button:focus {
-            box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.2);
         }
         .accordion-item {
             background-color: var(--card-bg);
@@ -237,12 +163,8 @@
             border-radius: 12px !important;
             overflow: hidden;
         }
-        .accordion-body {
-            background-color: var(--card-bg);
-            color: var(--text-color);
-        }
+        .accordion-body { background-color: var(--card-bg); color: var(--text-color); }
 
-        /* Табы */
         .nav-pills .nav-link {
             color: var(--text-muted);
             background-color: var(--card-bg);
@@ -255,109 +177,50 @@
             border-color: #6C5CE7;
         }
 
-        /* Списки */
         .list-group-item {
             background-color: var(--card-bg);
             color: var(--text-color);
             border-color: var(--border-color);
-            padding: 1rem;
-        }
-        .list-group-item-action:hover {
-            background-color: var(--table-row-hover);
         }
 
-        /* Модальные окна */
         .modal-content {
             background-color: var(--card-bg);
             color: var(--text-color);
             border: 1px solid var(--border-color);
         }
-        .modal-header {
-            border-bottom-color: var(--border-color);
-            color: var(--text-color);
-        }
-        .modal-footer {
-            border-top-color: var(--border-color);
-        }
-        .modal-title {
-            color: var(--text-color);
-        }
+        .modal-header { border-bottom-color: var(--border-color); color: var(--text-color); }
+        .modal-footer { border-top-color: var(--border-color); }
+        .modal-title { color: var(--text-color); }
 
-        /* Бейджи */
-        .badge {
-            font-weight: 600;
-            padding: 0.5em 0.8em;
-        }
+        .badge { font-weight: 600; padding: 0.5em 0.8em; }
         .bg-success { background-color: #00B894 !important; }
         .bg-danger { background-color: #E17055 !important; }
         .bg-warning { background-color: #F39C12 !important; }
         .bg-secondary { background-color: #6C757D !important; }
         .bg-info { background-color: #0984E3 !important; }
-        .bg-light {
-            background-color: var(--input-bg) !important;
-            color: var(--text-color) !important;
-        }
+        .bg-light { background-color: var(--input-bg) !important; color: var(--text-color) !important; }
 
-        /* Алерты */
-        .alert {
-            border: none;
-            box-shadow: 0 4px 20px var(--shadow-color);
-        }
-        .alert-success {
-            background-color: rgba(0, 184, 148, 0.15);
-            color: #00B894;
-            border: 1px solid #00B894;
-        }
-        .alert-danger {
-            background-color: rgba(225, 112, 85, 0.15);
-            color: #E17055;
-            border: 1px solid #E17055;
-        }
-        .alert-warning {
-            background-color: rgba(243, 156, 18, 0.15);
-            color: #F39C12;
-            border: 1px solid #F39C12;
-        }
-        .alert-info {
-            background-color: rgba(9, 132, 227, 0.15);
-            color: #0984E3;
-            border: 1px solid #0984E3;
-        }
+        .alert { border: none; box-shadow: 0 4px 20px var(--shadow-color); }
+        .alert-success { background-color: rgba(0, 184, 148, 0.15); color: #00B894; border: 1px solid #00B894; }
+        .alert-danger { background-color: rgba(225, 112, 85, 0.15); color: #E17055; border: 1px solid #E17055; }
+        .alert-warning { background-color: rgba(243, 156, 18, 0.15); color: #F39C12; border: 1px solid #F39C12; }
+        .alert-info { background-color: rgba(9, 132, 227, 0.15); color: #0984E3; border: 1px solid #0984E3; }
 
-        .floating-alert { 
-            position: fixed; 
-            top: 80px; 
-            right: 20px; 
-            z-index: 1050; 
-            min-width: 300px; 
-        }
+        .floating-alert { position: fixed; top: 80px; right: 20px; z-index: 1050; min-width: 300px; }
+        .theme-toggle-btn { cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 500; }
 
-        .theme-toggle-btn { 
-            cursor: pointer; 
-            display: flex; 
-            align-items: center; 
-            gap: 6px;
-            font-weight: 500;
-        }
+        h1, h2, h3, h4, h5, h6 { color: var(--text-color); }
+        .text-muted { color: var(--text-muted) !important; }
+        .fw-bold { color: var(--text-color); }
 
-        /* Текст */
-        h1, h2, h3, h4, h5, h6 {
-            color: var(--text-color);
-        }
-        .text-muted {
-            color: var(--text-muted) !important;
-        }
-        .fw-bold {
-            color: var(--text-color);
-        }
-
-        /* Дополнительные вставки */
-        .bg-white, .bg-light {
-            background-color: var(--card-bg) !important;
-            color: var(--text-color);
-        }
-        .shadow-sm {
-            box-shadow: var(--shadow-color) !important;
+        /* ВАЖНО: белый текст внутри цветных плашек с градиентом */
+        .card[style*="linear-gradient"] h5,
+        .card[style*="linear-gradient"] .display-4,
+        .card[style*="linear-gradient"] small,
+        .card[style*="linear-gradient"] .opacity-75,
+        .card[style*="linear-gradient"] .fw-bold,
+        .card[style*="linear-gradient"] .mb-1 {
+            color: white !important;
         }
     </style>
 </head>
